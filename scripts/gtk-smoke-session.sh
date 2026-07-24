@@ -33,23 +33,38 @@ xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id' || {
 "${app}" >"${log}" 2>&1 &
 app_pid=$!
 
+find_visible_window() {
+  local candidate
+  while IFS= read -r candidate; do
+    [ -n "${candidate}" ] || continue
+    if xwininfo -id "${candidate}" 2>/dev/null | grep -q 'Map State: IsViewable'; then
+      printf '%s\n' "${candidate}"
+      return 0
+    fi
+  done < <(xdotool search --name '^VoidClip$' 2>/dev/null || true)
+  return 1
+}
+
+print_window_states() {
+  local candidate
+  while IFS= read -r candidate; do
+    [ -n "${candidate}" ] || continue
+    printf '  window %s: ' "${candidate}"
+    xwininfo -id "${candidate}" 2>/dev/null |
+      sed -n 's/^[[:space:]]*Map State: /Map State: /p'
+  done < <(xdotool search --name '^VoidClip$' 2>/dev/null || true)
+}
+
 window=""
 for _ in $(seq 1 50); do
-  window="$(xdotool search --name '^VoidClip$' 2>/dev/null | head -1 || true)"
+  window="$(find_visible_window || true)"
   [ -n "${window}" ] && break
   sleep 0.1
 done
 [ -n "${window}" ] || {
-  echo "FAIL: VoidClip window did not appear"
-  cat "${log}"
-  exit 1
-}
-for _ in $(seq 1 50); do
-  xwininfo -id "${window}" 2>/dev/null | grep -q 'Map State: IsViewable' && break
-  sleep 0.1
-done
-xwininfo -id "${window}" | grep -q 'Map State: IsViewable' || {
-  echo "FAIL: VoidClip window was created but never became visible"
+  echo "FAIL: no visible VoidClip window was found"
+  echo "Matching X11 window states:"
+  print_window_states
   cat "${log}"
   exit 1
 }
