@@ -56,7 +56,7 @@ constexpr const char* kMimePasswordManagerHint = "x-kde-passwordManagerHint";
 
 } // namespace
 
-GdkClipboardSource::GdkClipboardSource(std::filesystem::path legacy_state_file)
+GdkClipboardSource::GdkClipboardSource(const std::filesystem::path& legacy_state_file)
     : clipboard_{default_clipboard()} {
     std::error_code error;
     std::filesystem::remove(legacy_state_file, error);

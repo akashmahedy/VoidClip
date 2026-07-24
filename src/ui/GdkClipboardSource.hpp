@@ -26,7 +26,7 @@ class GdkClipboardSource final : public core::ClipboardSource {
 public:
     // `legacy_state_file` identifies the pre-v0.3 plaintext clipboard cache. It
     // is removed on construction; dedup state now stays in memory only.
-    explicit GdkClipboardSource(std::filesystem::path legacy_state_file);
+    explicit GdkClipboardSource(const std::filesystem::path& legacy_state_file);
     ~GdkClipboardSource() override;
 
     GdkClipboardSource(const GdkClipboardSource&) = delete;

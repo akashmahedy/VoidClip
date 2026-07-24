@@ -7,6 +7,7 @@
 #include <spdlog/spdlog.h>
 
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -17,11 +18,13 @@ namespace {
 constexpr const char* kChannel = "xfce4-keyboard-shortcuts";
 constexpr const char* kCustomPrefix = "/commands/custom/";
 
-[[nodiscard]] std::string property_for(const std::string& accelerator) {
+[[nodiscard]] std::string property_for(std::string_view accelerator) {
     if (accelerator.empty() || accelerator.contains('/')) {
         return {};
     }
-    return std::string{kCustomPrefix} + accelerator;
+    std::string property{kCustomPrefix};
+    property.append(accelerator);
+    return property;
 }
 
 [[nodiscard]] std::string trim(std::string value) {
@@ -62,28 +65,29 @@ bool xfce_shortcuts_available() {
     return !Glib::find_program_in_path("xfconf-query").empty();
 }
 
-bool register_xfce_shortcut(const std::string& command, const std::string& accelerator) {
-    const std::string property = property_for(accelerator);
-    if (command.empty() || property.empty() || !xfce_shortcuts_available()) {
+bool register_xfce_shortcut(const XfceShortcutBinding& binding) {
+    const std::string property = property_for(binding.accelerator);
+    if (binding.command.empty() || property.empty() || !xfce_shortcuts_available()) {
         return false;
     }
 
     std::string current;
     if (read_binding(property, current)) {
-        if (current == command) {
+        if (current == binding.command) {
             return true;
         }
         spdlog::warn("XFCE shortcut {} is already assigned to '{}'; leaving it unchanged",
-                     accelerator, current);
+                     binding.accelerator, current);
         return false;
     }
 
-    return run_xfconf({"-c", kChannel, "-p", property, "-n", "-t", "string", "-s", command});
+    return run_xfconf(
+        {"-c", kChannel, "-p", property, "-n", "-t", "string", "-s", std::string{binding.command}});
 }
 
-bool unregister_xfce_shortcut(const std::string& command, const std::string& accelerator) {
-    const std::string property = property_for(accelerator);
-    if (command.empty() || property.empty() || !xfce_shortcuts_available()) {
+bool unregister_xfce_shortcut(const XfceShortcutBinding& binding) {
+    const std::string property = property_for(binding.accelerator);
+    if (binding.command.empty() || property.empty() || !xfce_shortcuts_available()) {
         return false;
     }
 
@@ -91,19 +95,19 @@ bool unregister_xfce_shortcut(const std::string& command, const std::string& acc
     if (!read_binding(property, current)) {
         return true;
     }
-    if (current != command) {
+    if (current != binding.command) {
         return true; // not ours: never remove another application shortcut
     }
     return run_xfconf({"-c", kChannel, "-p", property, "-r"});
 }
 
-bool is_xfce_shortcut_registered(const std::string& command, const std::string& accelerator) {
-    const std::string property = property_for(accelerator);
-    if (command.empty() || property.empty() || !xfce_shortcuts_available()) {
+bool is_xfce_shortcut_registered(const XfceShortcutBinding& binding) {
+    const std::string property = property_for(binding.accelerator);
+    if (binding.command.empty() || property.empty() || !xfce_shortcuts_available()) {
         return false;
     }
     std::string current;
-    return read_binding(property, current) && current == command;
+    return read_binding(property, current) && current == binding.command;
 }
 
 } // namespace copyclip::ui

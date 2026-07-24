@@ -13,6 +13,7 @@
 
 #include <sigc++/connection.h>
 
+#include <cstdint>
 #include <functional>
 #include <string>
 
@@ -21,7 +22,7 @@ namespace copyclip::ui {
 // Explicit keyboard actions can override the persistent auto-paste preference.
 // FollowSettings preserves click behavior; the other modes always close the
 // picker after a successful clipboard write.
-enum class CopyMode {
+enum class CopyMode : std::uint8_t {
     FollowSettings,
     CopyOnly,
     Paste,
