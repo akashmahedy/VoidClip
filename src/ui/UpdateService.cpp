@@ -45,6 +45,25 @@ struct ProcessResult {
     std::string output;
 };
 
+[[nodiscard]] UpdateCheckResult check_error(std::string message) {
+    UpdateCheckResult result;
+    result.message = std::move(message);
+    return result;
+}
+
+[[nodiscard]] UpdateCheckResult up_to_date(std::string message) {
+    UpdateCheckResult result;
+    result.state = UpdateCheckState::UpToDate;
+    result.message = std::move(message);
+    return result;
+}
+
+[[nodiscard]] UpdateInstallResult install_error(std::string message) {
+    UpdateInstallResult result;
+    result.message = std::move(message);
+    return result;
+}
+
 class TemporaryDirectory {
 public:
     TemporaryDirectory() {
@@ -236,7 +255,7 @@ UpdateCheckResult check_release_json(std::string_view release_json,
                                      std::string_view release_arch, std::string_view deb_arch) {
     const auto current = parse_version(current_version);
     if (!current.has_value()) {
-        return {.message = "The installed VoidClip version is not valid."};
+        return check_error("The installed VoidClip version is not valid.");
     }
 
     nlohmann::json release;
@@ -244,10 +263,10 @@ UpdateCheckResult check_release_json(std::string_view release_json,
         release = nlohmann::json::parse(release_json);
         if (!release.is_object() || !release.value("draft", true) ||
             release.value("prerelease", true)) {
-            return {.message = "GitHub did not return a stable VoidClip release."};
+            return check_error("GitHub did not return a stable VoidClip release.");
         }
     } catch (const nlohmann::json::exception&) {
-        return {.message = "GitHub returned update information VoidClip could not read."};
+        return check_error("GitHub returned update information VoidClip could not read.");
     }
 
     std::string tag;
@@ -256,20 +275,19 @@ UpdateCheckResult check_release_json(std::string_view release_json,
         tag = release.value("tag_name", std::string{});
         assets = release.value("assets", nlohmann::json::array());
     } catch (const nlohmann::json::exception&) {
-        return {.message = "GitHub returned update information VoidClip could not read."};
+        return check_error("GitHub returned update information VoidClip could not read.");
     }
 
     const auto latest = parse_version(tag);
     if (!latest.has_value()) {
-        return {.message = "The latest release has an invalid version number."};
+        return check_error("The latest release has an invalid version number.");
     }
     const std::string version = tag.starts_with('v') ? tag.substr(1) : tag;
     if (tag != "v" + version) {
-        return {.message = "The latest release does not use a trusted version tag."};
+        return check_error("The latest release does not use a trusted version tag.");
     }
     if (*latest <= *current) {
-        return {.state = UpdateCheckState::UpToDate,
-                .message = "You already have the latest version."};
+        return up_to_date("You already have the latest version.");
     }
 
     const std::string package_name = "voidclip_" + version + "_" + std::string{deb_arch} + ".deb";
@@ -277,7 +295,7 @@ UpdateCheckResult check_release_json(std::string_view release_json,
     std::string package_url;
     std::string checksum_url;
     if (!assets.is_array()) {
-        return {.message = "The latest release has no readable download list."};
+        return check_error("The latest release has no readable download list.");
     }
     try {
         for (const nlohmann::json& asset : assets) {
@@ -293,19 +311,21 @@ UpdateCheckResult check_release_json(std::string_view release_json,
             }
         }
     } catch (const nlohmann::json::exception&) {
-        return {.message = "The latest release has an invalid download list."};
+        return check_error("The latest release has an invalid download list.");
     }
     if (!trusted_release_url(package_url, tag, package_name) ||
         !trusted_release_url(checksum_url, tag, manifest_name)) {
-        return {.message = "The latest release is missing a trusted package or checksum."};
+        return check_error("The latest release is missing a trusted package or checksum.");
     }
-    return {.state = UpdateCheckState::Available,
-            .release = {.version = version,
-                        .tag = tag,
-                        .package_name = package_name,
-                        .package_url = package_url,
-                        .checksum_url = checksum_url},
-            .message = "A newer VoidClip release is available."};
+    UpdateCheckResult result;
+    result.state = UpdateCheckState::Available;
+    result.release = {.version = version,
+                      .tag = tag,
+                      .package_name = package_name,
+                      .package_url = package_url,
+                      .checksum_url = checksum_url};
+    result.message = "A newer VoidClip release is available.";
+    return result;
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters): manifest/name roles are unambiguous.
@@ -336,7 +356,7 @@ std::string checksum_for_asset(std::string_view manifest, std::string_view asset
 UpdateCheckResult check_for_update(std::string_view current_version) {
     const auto architecture = current_architecture();
     if (!architecture.has_value()) {
-        return {.message = "Automatic updates are not available for this CPU architecture."};
+        return check_error("Automatic updates are not available for this CPU architecture.");
     }
     const ProcessResult response =
         run_capture({"curl",
@@ -362,7 +382,7 @@ UpdateCheckResult check_for_update(std::string_view current_version) {
                      std::string{kReleaseApi}});
     if (!response.success || response.output.empty() ||
         response.output.size() > kMaximumManifestBytes) {
-        return {.message = "Could not reach GitHub. Check your internet connection."};
+        return check_error("Could not reach GitHub. Check your internet connection.");
     }
     UpdateCheckResult result = check_release_json(response.output, current_version,
                                                   architecture->release, architecture->deb);
@@ -374,12 +394,12 @@ UpdateCheckResult check_for_update(std::string_view current_version) {
 
 UpdateInstallResult install_deb_update(const UpdateRelease& release) {
     if (!automatic_deb_update_supported()) {
-        return {.message = "Automatic installation is available only for an existing VoidClip "
-                           "Debian package install."};
+        return install_error("Automatic installation is available only for an existing VoidClip "
+                             "Debian package install.");
     }
     const auto architecture = current_architecture();
     if (!architecture.has_value()) {
-        return {.message = "Automatic updates are not available for this CPU architecture."};
+        return install_error("Automatic updates are not available for this CPU architecture.");
     }
     const auto parsed_version = parse_version(release.version);
     const std::string expected_package =
@@ -389,18 +409,18 @@ UpdateInstallResult install_deb_update(const UpdateRelease& release) {
         release.package_name != expected_package ||
         !trusted_release_url(release.package_url, release.tag, release.package_name) ||
         !trusted_release_url(release.checksum_url, release.tag, expected_manifest)) {
-        return {.message = "The selected update did not pass VoidClip's download checks."};
+        return install_error("The selected update did not pass VoidClip's download checks.");
     }
 
     TemporaryDirectory temporary;
     if (temporary.path().empty()) {
-        return {.message = "VoidClip could not create a private update folder."};
+        return install_error("VoidClip could not create a private update folder.");
     }
     const std::filesystem::path package = temporary.path() / release.package_name;
     const std::filesystem::path manifest = temporary.path() / "SHA256SUMS";
     if (!download(release.checksum_url, manifest, kMaximumManifestBytes) ||
         !download(release.package_url, package, kMaximumPackageBytes)) {
-        return {.message = "The update download failed. Check your internet connection."};
+        return install_error("The update download failed. Check your internet connection.");
     }
 
     const auto manifest_contents = read_small_file(manifest, kMaximumManifestBytes);
@@ -412,25 +432,27 @@ UpdateInstallResult install_deb_update(const UpdateRelease& release) {
     std::string actual;
     hash_fields >> actual;
     if (!hash.success || expected.empty() || lowercase(actual) != expected) {
-        return {.message = "The downloaded update failed SHA-256 verification. Nothing was "
-                           "installed."};
+        return install_error("The downloaded update failed SHA-256 verification. Nothing was "
+                             "installed.");
     }
 
     const std::string pkexec = Glib::find_program_in_path("pkexec");
     const std::string apt_get = Glib::find_program_in_path("apt-get");
     if (!run({pkexec, apt_get, "install", "--yes", "--no-remove", package.string()})) {
-        return {.message = "The update was not installed. Administrator approval may have been "
-                           "cancelled."};
+        return install_error("The update was not installed. Administrator approval may have been "
+                             "cancelled.");
     }
     const ProcessResult installed =
         run_capture({"dpkg-query", "-W", "-f=${Version}", std::string{kPackageName}});
     if (!installed.success || !installed.output.starts_with(release.version)) {
-        return {.message = "The installer finished, but the new VoidClip version could not be "
-                           "confirmed."};
+        return install_error("The installer finished, but the new VoidClip version could not be "
+                             "confirmed.");
     }
-    return {.success = true,
-            .message = "Version " + release.version +
-                       " is installed. Restart VoidClip to use the update."};
+    UpdateInstallResult result;
+    result.success = true;
+    result.message =
+        "Version " + release.version + " is installed. Restart VoidClip to use the update.";
+    return result;
 }
 
 } // namespace voidclip::ui
