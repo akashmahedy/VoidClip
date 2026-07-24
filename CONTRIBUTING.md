@@ -98,7 +98,7 @@ After a build, the binary lands under `build/<preset>/`. Launch it directly:
 ```
 
 CopyClip runs in the background and shows its window when you press the hotkey
-(default `Super+C`). A couple of runtime notes:
+(default `Super+V`). A couple of runtime notes:
 
 - **Auto-paste needs `/dev/uinput`.** It injects Ctrl+V through a virtual
   keyboard, which requires write access to `/dev/uinput`. Add yourself to the
@@ -109,6 +109,9 @@ CopyClip runs in the background and shows its window when you press the hotkey
   `GDK_BACKEND=x11` so it reads the X11 selection, which the compositor mirrors
   to and from the Wayland clipboard. This is the only focus-free way to capture
   in the background under GNOME's Mutter.
+- **XFCE shortcuts use Xfconf.** In an XFCE session, CopyClip registers the
+  application shortcut through `xfconf-query` and refuses to replace a shortcut
+  already owned by another command.
 - **Running alongside an installed copy.** Set `COPYCLIP_STANDALONE=1` in the environment
   to run your dev build next to an installed instance without the two fighting
   over the same socket and storage.

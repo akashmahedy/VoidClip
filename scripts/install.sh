@@ -13,7 +13,6 @@ export DEBIAN_FRONTEND=noninteractive
 
 REPO="Walkercito/CopyClip"
 API="https://api.github.com/repos/${REPO}/releases/latest"
-TELEMETRY_ENDPOINT="https://copyclip-eta.vercel.app/api/installed"
 APP="copyclip"
 APP_ID="dev.walkercito.CopyClip"
 USER_BIN="${HOME}/.local/bin"
@@ -103,22 +102,6 @@ EOF
 
 need() { command -v "$1" >/dev/null 2>&1; }
 
-# Anonymous install counter: sends the event type (install/update/uninstall) and
-# the version(s) involved — install/uninstall carry the version acted on, an update
-# also carries the version it came from. Never any personal data. Fire-and-forget,
-# bounded timeout, can never fail the run. Honors the DO_NOT_TRACK=1 opt-out.
-# Usage: ping_event <event> [version] [from_version]
-ping_event() {
-  if [ "${DO_NOT_TRACK:-0}" = 1 ]; then return 0; fi
-  need curl || return 0
-  local body="{\"event\":\"$1\""
-  [ -n "${2:-}" ] && body="${body},\"version\":\"$2\""
-  [ -n "${3:-}" ] && body="${body},\"from\":\"$3\""
-  body="${body}}"
-  curl -fsS --connect-timeout 2 -m 4 -X POST -H 'Content-Type: application/json' \
-    -d "$body" "$TELEMETRY_ENDPOINT" >/dev/null 2>&1 || true
-}
-
 require_tools() {
   need curl || die "curl is required but not installed."
   need uname || die "uname is required but not installed."
@@ -194,6 +177,27 @@ asset_url() {
     | grep -F -- "$1" | head -1
 }
 
+# Verify a downloaded release asset against the checksum manifest published by
+# the release workflow. Installation fails closed if the manifest or matching
+# checksum is missing.
+verify_asset() { # $1 = local file, $2 = download URL
+  need sha256sum || die "sha256sum is required to verify downloads."
+  local manifest_name="SHA256SUMS-${ARCH}"
+  local manifest_url; manifest_url="$(asset_url "$manifest_name")"
+  [ -n "$manifest_url" ] || die "Release checksum manifest is missing."
+  local manifest="${TMP}/${manifest_name}"
+  if [ ! -f "$manifest" ]; then
+    run_step "Downloading checksums" curl -fsSL -o "$manifest" "$manifest_url" \
+      || die "Checksum download failed."
+  fi
+  local asset_name="${2##*/}"
+  local expected
+  expected="$(awk -v name="$asset_name" '$2 == name { print $1; exit }' "$manifest")"
+  [ -n "$expected" ] || die "No checksum published for ${asset_name}."
+  local actual; actual="$(sha256sum "$1" | awk '{print $1}')"
+  [ "$actual" = "$expected" ] || die "Checksum verification failed for ${asset_name}."
+}
+
 # --- autostart ----------------------------------------------------------------
 enable_autostart() { # $1 = exec command/path
   mkdir -p "$AUTOSTART_DIR"
@@ -244,6 +248,7 @@ install_deb() {
   ensure_sudo
   local f="${TMP}/${APP}.deb"
   run_step "Downloading $(basename "$url")" curl -fsSL -o "$f" "$url" || die "Download failed."
+  verify_asset "$f" "$url"
   run_step "Installing with apt" $SUDO apt-get install -y "$f" || return 1
   purge_appimage_files
   INSTALLED_BIN="/usr/bin/${APP}"
@@ -255,9 +260,9 @@ install_rpm() {
   ensure_sudo
   local f="${TMP}/${APP}.rpm"
   run_step "Downloading $(basename "$url")" curl -fsSL -o "$f" "$url" || die "Download failed."
+  verify_asset "$f" "$url"
   if [ "$FAMILY" = suse ]; then
-    run_step "Installing with zypper" \
-      $SUDO zypper --non-interactive install --allow-unsigned-rpm "$f" || return 1
+    run_step "Installing with zypper" $SUDO zypper --non-interactive install "$f" || return 1
   else
     run_step "Installing with dnf" $SUDO dnf install -y "$f" || return 1
   fi
@@ -270,8 +275,11 @@ install_appimage() {
   [ -n "$url" ] || return 1
   mkdir -p "$USER_BIN" "$USER_APPS" "$USER_ICONS" "$USER_ICONS_SYMBOLIC"
   local f="${USER_BIN}/${APP}"
-  run_step "Downloading $(basename "$url")" curl -fsSL -o "$f" "$url" || die "Download failed."
-  chmod +x "$f"
+  local staged="${TMP}/${APP}.AppImage"
+  run_step "Downloading $(basename "$url")" curl -fsSL -o "$staged" "$url" \
+    || die "Download failed."
+  verify_asset "$staged" "$url"
+  install -m 0755 "$staged" "$f"
 
   # Pull the bundled icons out of the AppImage (best-effort): the app icon for the
   # menu entry, and the symbolic icon for the panel/tray. Refresh the cache so both
@@ -462,12 +470,12 @@ main() {
     install)
       detect_installed
       if [ -n "$INSTALLED_VIA" ]; then
-        do_update; ping_event update "${RELEASE_TAG#v}" "${INSTALLED_VERSION#v}"
+        do_update
       else
-        do_install; ping_event install "${RELEASE_TAG#v}"
+        do_install
       fi
       ;;
-    uninstall) do_uninstall; ping_event uninstall "${INSTALLED_VERSION#v}" ;;
+    uninstall) do_uninstall ;;
     "")
       detect_installed
       if [ -n "$INSTALLED_VIA" ]; then
@@ -478,13 +486,12 @@ main() {
         read -rsn1 ans </dev/tty 2>/dev/null || ans=""
         printf '%s\n' "$ans"
         case "$ans" in
-          "" | u | U) do_update; ping_event update "${RELEASE_TAG#v}" "${INSTALLED_VERSION#v}" ;;
-          r | R) do_uninstall; ping_event uninstall "${INSTALLED_VERSION#v}" ;;
+          "" | u | U) do_update ;;
+          r | R) do_uninstall ;;
           *) note "Cancelled."; printf '\n'; exit 0 ;;
         esac
       else
         do_install
-        ping_event install "${RELEASE_TAG#v}"
       fi
       ;;
   esac

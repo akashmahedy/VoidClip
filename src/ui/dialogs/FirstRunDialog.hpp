@@ -2,7 +2,7 @@
 
 // One-time welcome dialog: introduces CopyClip and lets the user choose the
 // summon shortcut (free-form capture or a preset). On close it reports the chosen
-// GNOME accelerator; the caller completes first run and registers the shortcut.
+// GTK accelerator; the caller completes first run and registers the shortcut.
 // Built with the libadwaita C API.
 
 #include "ui/widgets/ShortcutChooser.hpp"

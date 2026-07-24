@@ -75,13 +75,17 @@ struct HotkeySpec {
 // User-configurable settings; defaults match the reference.
 struct Settings {
     Theme theme = Theme::Dark;
-    // GNOME accelerator for the open shortcut (e.g. "<Super>v"); free-form, so a
+    // GTK accelerator for the open shortcut (e.g. "<Super>v"); free-form, so a
     // string rather than the preset enum. Presets remain as UI quick-picks.
     std::string hotkey{config::kDefaultHotkeyAccelerator};
     bool first_run_completed = false;
     int max_history_items = config::kDefaultMaxHistoryItems;
     bool auto_hide_on_copy = true;
     bool auto_paste = false;
+    // When paused, clipboard changes are ignored until the user resumes capture.
+    // Persisting the choice prevents a privacy-sensitive pause from silently
+    // turning itself off after a restart.
+    bool capture_paused = false;
     bool show_panel_icon = true;
 };
 

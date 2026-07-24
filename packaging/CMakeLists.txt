@@ -53,7 +53,7 @@ set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/scripts/po
 set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "libglib2.0-bin")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "libglib2.0-bin, xfconf")
 set(CPACK_DEBIAN_PACKAGE_SUGGESTS "wtype, ydotool, xdotool")
 
 # .rpm: let rpmbuild auto-require the shared libraries.
@@ -61,6 +61,6 @@ set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
 set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Productivity")
 set(CPACK_RPM_PACKAGE_AUTOREQ ON)
-set(CPACK_RPM_PACKAGE_SUGGESTS "wtype")
+set(CPACK_RPM_PACKAGE_SUGGESTS "xfconf, wtype")
 
 include(CPack)

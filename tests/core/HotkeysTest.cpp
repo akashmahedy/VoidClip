@@ -88,7 +88,7 @@ TEST(HotkeysTest, AllPresetsReturnsFullCatalog) {
     }
 }
 
-// Each preset maps to its exact GNOME accelerator string (the form gsettings and
+// Each preset maps to its exact GTK accelerator string (accepted by gsettings and
 // the capture UI agree on).
 TEST(HotkeysTest, AcceleratorForMapsEveryPreset) {
     EXPECT_EQ(core::accelerator_for(core::HotkeyPreset::SuperV), "<Super>v");

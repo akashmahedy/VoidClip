@@ -20,6 +20,7 @@
 
 #include <adwaita.h>
 
+#include <gtkmm/button.h>
 #include <gtkmm/label.h>
 #include <gtkmm/listbox.h>
 #include <gtkmm/searchentry.h>
@@ -30,6 +31,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace copyclip::ui {
 
@@ -62,9 +64,18 @@ private:
     void schedule_refresh();
     void rebuild_cards();
     void apply_filter();
-    void copy(const core::ClipboardEntry& entry);
+    [[nodiscard]] std::vector<ClipCard*> visible_cards() const;
+    [[nodiscard]] ClipCard* selected_card() const;
+    void ensure_selection();
+    void select_relative(int direction);
+    void select_index(std::size_t index);
+    bool on_key_pressed(unsigned int keyval, unsigned int keycode, Gdk::ModifierType state);
+    void copy(const core::ClipboardEntry& entry, CopyMode mode = CopyMode::FollowSettings);
     void pin(const std::string& content);
+    void remove_selected();
     void clear_history();
+    void toggle_capture();
+    void refresh_capture_button();
     void open_settings();
     [[nodiscard]] bool matches(const std::string& content) const;
 
@@ -85,6 +96,7 @@ private:
     Gtk::SearchEntry* search_ = nullptr;
     Gtk::Label* empty_title_ = nullptr;
     Gtk::Label* empty_description_ = nullptr;
+    Gtk::Button* capture_button_ = nullptr;
     std::unique_ptr<SettingsDialog> settings_dialog_;
     std::unique_ptr<StatusNotifierItem> tray_;
     core::HistoryService::Subscription history_subscription_;

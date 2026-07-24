@@ -9,12 +9,16 @@
 
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
+#include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/image.h>
 #include <gtkmm/scrolledwindow.h>
+
+#include <gdk/gdkkeysyms.h>
 
 #include <glibmm/main.h>
 #include <glibmm/ustring.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <map>
@@ -88,6 +92,7 @@ MainWindow::MainWindow(GtkApplication* application, core::HistoryService& histor
     history_subscription_ = history_.get().subscribe([this] { schedule_refresh(); });
     apply_theme(settings.settings().theme);
     rebuild_cards();
+    refresh_capture_button();
     refresh_tray();
 }
 
@@ -163,6 +168,10 @@ void MainWindow::build_ui(GtkApplication* application) {
     clear_button->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::clear_history));
     adw_header_bar_pack_end(header, GTK_WIDGET(clear_button->gobj()));
 
+    capture_button_ = Gtk::make_managed<Gtk::Button>();
+    capture_button_->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::toggle_capture));
+    adw_header_bar_pack_end(header, GTK_WIDGET(capture_button_->gobj()));
+
     auto* settings_button = Gtk::make_managed<Gtk::Button>();
     settings_button->set_icon_name("emblem-system-symbolic");
     settings_button->set_tooltip_text("Settings");
@@ -180,6 +189,10 @@ void MainWindow::build_ui(GtkApplication* application) {
         search_text_ = search_->get_text().raw();
         apply_filter();
     });
+    const Glib::RefPtr<Gtk::EventControllerKey> key_controller = Gtk::EventControllerKey::create();
+    key_controller->signal_key_pressed().connect(sigc::mem_fun(*this, &MainWindow::on_key_pressed),
+                                                 false);
+    search_->add_controller(key_controller);
     content->append(*search_);
 
     stack_ = Gtk::make_managed<Gtk::Stack>();
@@ -188,7 +201,8 @@ void MainWindow::build_ui(GtkApplication* application) {
     auto* scrolled = Gtk::make_managed<Gtk::ScrolledWindow>();
     scrolled->set_policy(Gtk::PolicyType::NEVER, Gtk::PolicyType::AUTOMATIC);
     list_ = Gtk::make_managed<Gtk::ListBox>();
-    list_->set_selection_mode(Gtk::SelectionMode::NONE);
+    list_->set_selection_mode(Gtk::SelectionMode::SINGLE);
+    list_->set_activate_on_single_click(false);
     list_->add_css_class("background");
     list_->set_valign(Gtk::Align::START);
     // Keep rows ordered so incrementally-added cards land in place (see rebuild_cards).
@@ -303,6 +317,7 @@ void MainWindow::apply_filter() {
 
     if (visible > 0) {
         stack_->set_visible_child(kPageList);
+        ensure_selection();
         return;
     }
     if (card_count_ == 0) {
@@ -315,7 +330,102 @@ void MainWindow::apply_filter() {
     stack_->set_visible_child(kPageEmpty);
 }
 
-void MainWindow::copy(const core::ClipboardEntry& entry) {
+std::vector<ClipCard*> MainWindow::visible_cards() const {
+    std::vector<ClipCard*> visible;
+    for (Gtk::Widget* child = list_->get_first_child(); child != nullptr;
+         child = child->get_next_sibling()) {
+        auto* card = dynamic_cast<ClipCard*>(child);
+        if (card != nullptr && card->get_visible()) {
+            visible.push_back(card);
+        }
+    }
+    return visible;
+}
+
+ClipCard* MainWindow::selected_card() const {
+    Gtk::ListBoxRow* selected = list_->get_selected_row();
+    auto* card = dynamic_cast<ClipCard*>(selected);
+    return card != nullptr && card->get_visible() ? card : nullptr;
+}
+
+void MainWindow::ensure_selection() {
+    if (selected_card() != nullptr) {
+        return;
+    }
+    const std::vector<ClipCard*> visible = visible_cards();
+    if (!visible.empty()) {
+        list_->select_row(*visible.front());
+    }
+}
+
+void MainWindow::select_relative(int direction) {
+    const std::vector<ClipCard*> visible = visible_cards();
+    if (visible.empty()) {
+        return;
+    }
+    ClipCard* current = selected_card();
+    const auto found = std::find(visible.begin(), visible.end(), current);
+    std::ptrdiff_t index = found == visible.end() ? 0 : std::distance(visible.begin(), found);
+    index += static_cast<std::ptrdiff_t>(direction);
+    index = std::clamp(index, std::ptrdiff_t{0}, static_cast<std::ptrdiff_t>(visible.size() - 1));
+    list_->select_row(*visible.at(static_cast<std::size_t>(index)));
+}
+
+void MainWindow::select_index(std::size_t index) {
+    const std::vector<ClipCard*> visible = visible_cards();
+    if (index < visible.size()) {
+        list_->select_row(*visible.at(index));
+    }
+}
+
+bool MainWindow::on_key_pressed(unsigned int keyval, unsigned int /*keycode*/,
+                                Gdk::ModifierType state) {
+    const bool control =
+        (state & Gdk::ModifierType::CONTROL_MASK) == Gdk::ModifierType::CONTROL_MASK;
+    const bool alt = (state & Gdk::ModifierType::ALT_MASK) == Gdk::ModifierType::ALT_MASK;
+    const bool shift = (state & Gdk::ModifierType::SHIFT_MASK) == Gdk::ModifierType::SHIFT_MASK;
+
+    if (keyval == GDK_KEY_Escape) {
+        gtk_widget_set_visible(GTK_WIDGET(window_), FALSE);
+        return true;
+    }
+    if (keyval == GDK_KEY_Down || keyval == GDK_KEY_Up) {
+        select_relative(keyval == GDK_KEY_Down ? 1 : -1);
+        return true;
+    }
+    if (control && keyval >= GDK_KEY_1 && keyval <= GDK_KEY_9) {
+        select_index(static_cast<std::size_t>(keyval - GDK_KEY_1));
+        if (ClipCard* card = selected_card(); card != nullptr) {
+            copy(card->entry(), CopyMode::CopyOnly);
+        }
+        return true;
+    }
+    if (control && (keyval == GDK_KEY_p || keyval == GDK_KEY_P)) {
+        if (ClipCard* card = selected_card(); card != nullptr) {
+            pin(card->content());
+        }
+        return true;
+    }
+    if (keyval == GDK_KEY_Delete) {
+        remove_selected();
+        return true;
+    }
+    if (control && keyval == GDK_KEY_comma) {
+        open_settings();
+        return true;
+    }
+    if (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) {
+        if (ClipCard* card = selected_card(); card != nullptr) {
+            const CopyMode mode =
+                alt ? (shift ? CopyMode::PastePlainText : CopyMode::Paste) : CopyMode::CopyOnly;
+            copy(card->entry(), mode);
+        }
+        return true;
+    }
+    return false;
+}
+
+void MainWindow::copy(const core::ClipboardEntry& entry, CopyMode mode) {
     // Reconstruct the clipboard payload for the entry's kind. Image bytes are
     // fetched lazily by hash; rich text carries its HTML alongside the plain text.
     core::ClipContent content;
@@ -329,7 +439,7 @@ void MainWindow::copy(const core::ClipboardEntry& entry) {
         content.html = entry.html;
     }
     // CopyAction handles clipboard + history + auto-paste; the window just hides.
-    if (copy_action_.run(content)) {
+    if (copy_action_.run(content, mode)) {
         gtk_widget_set_visible(GTK_WIDGET(window_), FALSE);
     }
 }
@@ -338,8 +448,37 @@ void MainWindow::pin(const std::string& content) {
     history_.get().toggle_pin(content);
 }
 
+void MainWindow::remove_selected() {
+    if (ClipCard* card = selected_card(); card != nullptr) {
+        history_.get().remove(card->content());
+    }
+}
+
 void MainWindow::clear_history() {
     history_.get().clear_unpinned();
+}
+
+void MainWindow::toggle_capture() {
+    core::Settings updated = settings_.get().settings();
+    updated.capture_paused = !updated.capture_paused;
+    settings_.get().update(updated);
+    refresh_capture_button();
+}
+
+void MainWindow::refresh_capture_button() {
+    if (capture_button_ == nullptr) {
+        return;
+    }
+    const bool paused = settings_.get().settings().capture_paused;
+    capture_button_->set_icon_name(paused ? "media-playback-start-symbolic"
+                                          : "media-playback-pause-symbolic");
+    capture_button_->set_tooltip_text(paused ? "Resume clipboard recording"
+                                             : "Pause clipboard recording");
+    if (paused) {
+        capture_button_->add_css_class("warning");
+    } else {
+        capture_button_->remove_css_class("warning");
+    }
 }
 
 void MainWindow::open_settings() {
@@ -347,10 +486,13 @@ void MainWindow::open_settings() {
         return; // already open — a second dialog would leave dangling row callbacks
     }
     settings_dialog_ = std::make_unique<SettingsDialog>(
-        GTK_WIDGET(window_), settings_.get(),
+        GTK_WIDGET(window_), settings_.get(), history_.get(),
         [this] { apply_theme(settings_.get().settings().theme); }, [this] { refresh_tray(); },
         // On close, drop the wrapper (on idle, not mid-signal) so it can reopen.
-        [this] { Glib::signal_idle().connect_once([this] { settings_dialog_.reset(); }); });
+        [this] {
+            refresh_capture_button();
+            Glib::signal_idle().connect_once([this] { settings_dialog_.reset(); });
+        });
 }
 
 bool MainWindow::matches(const std::string& content) const {
@@ -377,6 +519,7 @@ void MainWindow::toggle() {
 }
 
 void MainWindow::present() {
+    refresh_capture_button();
     gtk_window_present(GTK_WINDOW(window_));
     // Start on the search field (type to filter); never leave a header button
     // showing the focus ring.

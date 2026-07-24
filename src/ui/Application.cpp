@@ -3,12 +3,15 @@
 #include "core/Enums.hpp"
 #include "core/Platform.hpp"
 #include "ui/Constants.hpp"
+#include "ui/DesktopShortcut.hpp"
 #include "ui/GnomeShortcut.hpp"
 
 #include <adwaita.h>
 
 #include <giomm/simpleaction.h>
 #include <glibmm/main.h>
+
+#include <spdlog/spdlog.h>
 
 #include <cstdlib>
 #include <filesystem>
@@ -64,8 +67,11 @@ void Application::on_activate() {
         clipboard_ = std::make_unique<GdkClipboardSource>(clipboard_state_file_);
         window_ = std::make_unique<MainWindow>(application_->gobj(), history_.get(),
                                                settings_.get(), *clipboard_, paster_);
-        clipboard_->start(
-            [this](const core::ClipContent& content) { history_.get().add(content); });
+        clipboard_->start([this](const core::ClipContent& content) {
+            if (!settings_.get().settings().capture_paused) {
+                history_.get().add(content);
+            }
+        });
         application_->hold(); // keep capturing in the background after the window hides
         // On idle (so gsettings calls don't delay the window): onboard a new user,
         // otherwise refresh the binding only if the shortcut is still enabled.
@@ -75,10 +81,16 @@ void Application::on_activate() {
                     window_->native(), settings_.get().settings().hotkey,
                     [this](const std::string& accelerator) {
                         settings_.get().complete_first_run(accelerator);
-                        register_gnome_shortcut(executable_path(), accelerator);
+                        if (!register_desktop_shortcut(executable_path(), accelerator)) {
+                            spdlog::warn("global shortcut could not be registered");
+                        }
                     });
-            } else if (is_gnome_shortcut_registered()) {
-                register_gnome_shortcut(executable_path(), settings_.get().settings().hotkey);
+            } else if (is_desktop_shortcut_registered(executable_path(),
+                                                      settings_.get().settings().hotkey)) {
+                if (!register_desktop_shortcut(executable_path(),
+                                               settings_.get().settings().hotkey)) {
+                    spdlog::warn("global shortcut could not be refreshed");
+                }
             }
         });
     }

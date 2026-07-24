@@ -58,6 +58,9 @@ constexpr const char* kTableMetadata = "metadata";
 // the SQLite sidecar files that must move with the main database file.
 constexpr std::string_view kArchiveMarker = ".incompatible.";
 constexpr std::array<const char*, 3> kSqliteSidecarSuffixes{"-wal", "-shm", "-journal"};
+constexpr std::filesystem::perms kPrivateDirectoryPermissions = std::filesystem::perms::owner_all;
+constexpr std::filesystem::perms kPrivateFilePermissions =
+    std::filesystem::perms::owner_read | std::filesystem::perms::owner_write;
 
 // A second process can touch the same DB (e.g. the global-shortcut launch running
 // alongside a COPYCLIP_STANDALONE dev instance). WAL allows a reader and a writer
@@ -65,6 +68,25 @@ constexpr std::array<const char*, 3> kSqliteSidecarSuffixes{"-wal", "-shm", "-jo
 // than failing immediately with "database is locked".
 constexpr int kBusyTimeoutMs = 3000;
 constexpr const char* kPragmaWal = "PRAGMA journal_mode=WAL";
+
+void set_private_permissions(const std::filesystem::path& path,
+                             std::filesystem::perms permissions) {
+    std::error_code error;
+    if (!std::filesystem::exists(path, error)) {
+        return;
+    }
+    std::filesystem::permissions(path, permissions, std::filesystem::perm_options::replace, error);
+    if (error) {
+        spdlog::warn("could not restrict permissions on {}: {}", path.string(), error.message());
+    }
+}
+
+void restrict_database_files(const std::filesystem::path& db_path) {
+    set_private_permissions(db_path, kPrivateFilePermissions);
+    for (const char* suffix : kSqliteSidecarSuffixes) {
+        set_private_permissions(db_path.string() + suffix, kPrivateFilePermissions);
+    }
+}
 
 constexpr const char* kInsertOrReplace =
     "INSERT OR REPLACE INTO entries "
@@ -246,6 +268,7 @@ std::filesystem::path ensure_parent(const std::filesystem::path& db_path) {
     const std::filesystem::path parent = db_path.parent_path();
     if (!parent.empty()) {
         std::filesystem::create_directories(parent);
+        set_private_permissions(parent, kPrivateDirectoryPermissions);
     }
     return db_path;
 }
@@ -332,7 +355,9 @@ std::filesystem::path ensure_parent(const std::filesystem::path& db_path) {
 
 SqliteHistoryRepository::SqliteHistoryRepository(const std::filesystem::path& db_path)
     : database_{prepare_db_path(db_path), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE} {
+    restrict_database_files(db_path);
     database_.exec(kPragmaWal);
+    restrict_database_files(db_path);
     database_.setBusyTimeout(kBusyTimeoutMs);
     database_.exec(kSchema);
     database_.exec(kSchemaImages);

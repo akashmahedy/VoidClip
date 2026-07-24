@@ -26,7 +26,9 @@ add_library(
   MainWindow.cpp
   Application.cpp
   GdkClipboardSource.cpp
+  DesktopShortcut.cpp
   GnomeShortcut.cpp
+  XfceShortcut.cpp
   StatusNotifierItem.cpp
   KeystrokePaster.cpp
   CopyAction.cpp

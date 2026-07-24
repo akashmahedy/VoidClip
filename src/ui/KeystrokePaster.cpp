@@ -39,6 +39,10 @@ constexpr const char* kDeviceName = "copyclip-paste";
 // input_event values: a key's pressed/released state, and the SYN_REPORT marker.
 constexpr std::int32_t kKeyPress = 1;
 constexpr std::int32_t kKeyRelease = 0;
+constexpr const char* kYdotoolCtrlDown = "29:1";
+constexpr const char* kYdotoolVDown = "47:1";
+constexpr const char* kYdotoolVUp = "47:0";
+constexpr const char* kYdotoolCtrlUp = "29:0";
 constexpr std::int32_t kSynValue = 0;
 
 // Driving /dev/uinput means C open()/ioctl() varargs and a flat type/code/value
@@ -144,7 +148,10 @@ private:
 // virtual keyboard (wtype) then uinput-via-daemon (ydotool); X11 uses XTEST.
 [[nodiscard]] std::vector<std::vector<std::string>> paste_commands(core::SessionType session) {
     if (session == core::SessionType::Wayland) {
-        return {{"wtype", "-M", "ctrl", "v", "-m", "ctrl"}, {"ydotool", "key", "ctrl+v"}};
+        // ydotool 1.x accepts Linux input keycodes only (not key names such as
+        // "ctrl+v"). 29 is KEY_LEFTCTRL and 47 is KEY_V.
+        return {{"wtype", "-M", "ctrl", "v", "-m", "ctrl"},
+                {"ydotool", "key", kYdotoolCtrlDown, kYdotoolVDown, kYdotoolVUp, kYdotoolCtrlUp}};
     }
     return {{"xdotool", "key", "--clearmodifiers", "ctrl+v"}};
 }

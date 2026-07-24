@@ -31,7 +31,7 @@ public:
 
     [[nodiscard]] bool is_first_run() const;
 
-    // Record the chosen shortcut (a GNOME accelerator) and mark the first run
+    // Record the chosen shortcut (a GTK accelerator) and mark the first run
     // complete (persisted).
     void complete_first_run(const std::string& accelerator);
 

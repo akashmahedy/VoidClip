@@ -37,6 +37,7 @@ void expect_settings_eq(const core::Settings& actual, const core::Settings& expe
     EXPECT_EQ(actual.max_history_items, expected.max_history_items);
     EXPECT_EQ(actual.auto_hide_on_copy, expected.auto_hide_on_copy);
     EXPECT_EQ(actual.auto_paste, expected.auto_paste);
+    EXPECT_EQ(actual.capture_paused, expected.capture_paused);
     EXPECT_EQ(actual.show_panel_icon, expected.show_panel_icon);
 }
 
@@ -77,6 +78,7 @@ TEST_F(JsonSettingsRepositoryTest, SaveThenLoadRoundtrip) {
                                .max_history_items = config::kDefaultMaxHistoryItems,
                                .auto_hide_on_copy = true,
                                .auto_paste = true,
+                               .capture_paused = true,
                                .show_panel_icon = false};
     repo().save(saved);
 
@@ -99,7 +101,7 @@ TEST_F(JsonSettingsRepositoryTest, InvalidEnumValueFallsBackToDefaults) {
 }
 
 // A settings file from an older build stored the hotkey as a preset token;
-// load() migrates it to the equivalent GNOME accelerator.
+// load() migrates it to the equivalent GTK accelerator.
 TEST_F(JsonSettingsRepositoryTest, MigratesLegacyPresetTokenToAccelerator) {
     write_text(settings_path(), R"({"hotkey": "super_c"})");
     EXPECT_EQ(repo().load().hotkey, "<Super>c");
@@ -123,5 +125,18 @@ TEST_F(JsonSettingsRepositoryTest, SaveLeavesNoTempFileBehind) {
     EXPECT_TRUE(std::filesystem::exists(settings_path()));
     EXPECT_FALSE(std::filesystem::exists(temp_path));
 }
+
+#ifndef _WIN32
+TEST_F(JsonSettingsRepositoryTest, SaveRestrictsSettingsToCurrentUser) {
+    repo().save(core::Settings{});
+
+    constexpr std::filesystem::perms forbidden =
+        std::filesystem::perms::group_all | std::filesystem::perms::others_all;
+    EXPECT_EQ(std::filesystem::status(settings_path()).permissions() & forbidden,
+              std::filesystem::perms::none);
+    EXPECT_EQ(std::filesystem::status(settings_path().parent_path()).permissions() & forbidden,
+              std::filesystem::perms::none);
+}
+#endif
 
 } // namespace

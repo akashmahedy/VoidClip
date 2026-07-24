@@ -22,8 +22,6 @@
 #include <cstddef>
 #include <exception>
 #include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -36,6 +34,9 @@ namespace copyclip::ui {
 namespace {
 
 constexpr const char* kMimeHtml = "text/html";
+// KeePassXC and other KDE-compatible password managers mark secrets with this
+// MIME type specifically so clipboard history tools do not retain them.
+constexpr const char* kMimePasswordManagerHint = "x-kde-passwordManagerHint";
 
 [[nodiscard]] Glib::RefPtr<Gdk::Clipboard> default_clipboard() {
     const Glib::RefPtr<Gdk::Display> display = Gdk::Display::get_default();
@@ -43,27 +44,6 @@ constexpr const char* kMimeHtml = "text/html";
         throw std::runtime_error{"no GDK display for the clipboard"};
     }
     return display->get_clipboard();
-}
-
-[[nodiscard]] std::string read_state(const std::filesystem::path& path) {
-    std::ifstream stream{path, std::ios::binary};
-    if (!stream) {
-        return {};
-    }
-    return std::string{std::istreambuf_iterator<char>{stream}, std::istreambuf_iterator<char>{}};
-}
-
-void write_state(const std::filesystem::path& path, const std::string& content) {
-    std::error_code error;
-    std::filesystem::create_directories(path.parent_path(), error);
-    std::ofstream stream{path, std::ios::binary | std::ios::trunc};
-    stream << content;
-    if (error || !stream) {
-        // Best-effort: failing to persist just means the current clipboard may be
-        // re-captured as a duplicate next launch. Worth a breadcrumb, not a throw.
-        spdlog::debug("could not persist clipboard state to {}: {}", path.string(),
-                      error ? error.message() : "write failed");
-    }
 }
 
 // Copy a Glib::Bytes buffer into a byte vector without raw pointer arithmetic.
@@ -76,8 +56,15 @@ void write_state(const std::filesystem::path& path, const std::string& content) 
 
 } // namespace
 
-GdkClipboardSource::GdkClipboardSource(std::filesystem::path state_file)
-    : clipboard_{default_clipboard()}, state_file_{std::move(state_file)} {}
+GdkClipboardSource::GdkClipboardSource(const std::filesystem::path& legacy_state_file)
+    : clipboard_{default_clipboard()} {
+    std::error_code error;
+    std::filesystem::remove(legacy_state_file, error);
+    if (error) {
+        spdlog::warn("could not remove legacy plaintext clipboard state {}: {}",
+                     legacy_state_file.string(), error.message());
+    }
+}
 
 GdkClipboardSource::~GdkClipboardSource() {
     if (cancellable_) {
@@ -89,12 +76,6 @@ GdkClipboardSource::~GdkClipboardSource() {
 void GdkClipboardSource::start(std::function<void(const core::ClipContent&)> on_change) {
     on_change_ = std::move(on_change);
     cancellable_ = Gio::Cancellable::create();
-    // Seed from the remembered clipboard so the content already present at launch
-    // isn't re-captured.
-    const std::string remembered = read_state(state_file_);
-    if (!remembered.empty()) {
-        last_text_ = remembered;
-    }
     changed_connection_ =
         clipboard_->signal_changed().connect(sigc::mem_fun(*this, &GdkClipboardSource::on_changed));
 }
@@ -163,6 +144,12 @@ void GdkClipboardSource::read_text_or_rich() {
     // Reached after a failed texture read. By now the format list has been negotiated
     // (the texture attempt forced the round-trip), so the HTML check is reliable here.
     const Glib::RefPtr<const Gdk::ContentFormats> formats = clipboard_->get_formats();
+    if (formats && formats->contain_mime_type(kMimePasswordManagerHint)) {
+        last_text_.reset();
+        last_image_hash_.clear();
+        spdlog::debug("ignored confidential clipboard content");
+        return;
+    }
     if (formats && formats->contain_mime_type(kMimeHtml)) {
         read_rich_text();
     } else {
@@ -197,7 +184,6 @@ void GdkClipboardSource::read_plain_text() {
 void GdkClipboardSource::remember_text(const std::string& text) {
     last_text_ = text;
     last_image_hash_.clear();
-    write_state(state_file_, text);
 }
 
 void GdkClipboardSource::read_rich_text() {

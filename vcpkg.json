@@ -1,10 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "copyclip-engine",
-  "version": "0.1.0",
-  "description": "Native C++23 port of the CopyClip clipboard engine (headless, no UI).",
+  "version": "0.3.0",
+  "description": "Keyboard-first clipboard history manager for Linux.",
   "license": "MIT",
-  "homepage": "https://github.com/Walkercito/copyclip-cpp",
+  "homepage": "https://github.com/Walkercito/CopyClip",
   "builtin-baseline": "5d35de2ee8b13d0bcec328153605638a74fbbf84",
   "dependencies": [
     {

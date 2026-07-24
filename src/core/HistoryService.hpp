@@ -50,6 +50,10 @@ public:
 
     void clear_unpinned();
 
+    // Apply a new capacity immediately. Values below one are clamped to one;
+    // pinned entries still survive even when they exceed the configured limit.
+    void set_max_items(int max_items);
+
     // Snapshot of the history, sorted pinned-first then most-recent-first.
     [[nodiscard]] std::vector<ClipboardEntry> entries() const;
 

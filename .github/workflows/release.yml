@@ -75,6 +75,7 @@ jobs:
           mkdir -p dist
           cp build/release/*.deb build/release/*.rpm build/release/*.tar.gz \
              build/release/*.AppImage dist/
+          (cd dist && sha256sum copyclip-* > "SHA256SUMS-${{ matrix.arch }}")
           ls -lh dist
 
       - name: Attach to GitHub Release
