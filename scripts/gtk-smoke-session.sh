@@ -25,6 +25,15 @@ done
   cat "${log}"
   exit 1
 }
+for _ in $(seq 1 50); do
+  xdotool getwindowmapstate "${window}" 2>/dev/null | grep -q IsViewable && break
+  sleep 0.1
+done
+xdotool getwindowmapstate "${window}" | grep -q IsViewable || {
+  echo "FAIL: VoidClip window was created but never became visible"
+  cat "${log}"
+  exit 1
+}
 xdotool windowfocus --sync "${window}"
 sleep 0.1
 
