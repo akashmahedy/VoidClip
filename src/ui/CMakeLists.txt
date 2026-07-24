@@ -23,6 +23,7 @@ target_link_libraries(voidclip_ui_text PRIVATE voidclip::warnings voidclip::sani
 add_library(
   voidclip_ui STATIC
   Theme.cpp
+  Autostart.cpp
   MainWindow.cpp
   Application.cpp
   GdkClipboardSource.cpp

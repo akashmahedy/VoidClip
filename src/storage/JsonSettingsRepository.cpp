@@ -31,6 +31,8 @@ constexpr const char* kKeyAutoHideOnCopy = "auto_hide_on_copy";
 constexpr const char* kKeyAutoPaste = "auto_paste";
 constexpr const char* kKeyCapturePaused = "capture_paused";
 constexpr const char* kKeyShowPanelIcon = "show_panel_icon";
+constexpr const char* kKeySaveConfidentialClips = "save_confidential_clips";
+constexpr const char* kKeyStartAtLogin = "start_at_login";
 
 // Indentation width for the serialized JSON, mirroring the reference's
 // json.dumps(..., indent=2).
@@ -88,7 +90,10 @@ void set_private_permissions(const std::filesystem::path& path,
         .auto_hide_on_copy = json.value(kKeyAutoHideOnCopy, defaults.auto_hide_on_copy),
         .auto_paste = json.value(kKeyAutoPaste, defaults.auto_paste),
         .capture_paused = json.value(kKeyCapturePaused, defaults.capture_paused),
-        .show_panel_icon = json.value(kKeyShowPanelIcon, defaults.show_panel_icon)};
+        .show_panel_icon = json.value(kKeyShowPanelIcon, defaults.show_panel_icon),
+        .save_confidential_clips =
+            json.value(kKeySaveConfidentialClips, defaults.save_confidential_clips),
+        .start_at_login = json.value(kKeyStartAtLogin, defaults.start_at_login)};
 }
 
 } // namespace
@@ -135,7 +140,9 @@ void JsonSettingsRepository::save(const core::Settings& settings) {
                                  {kKeyAutoHideOnCopy, settings.auto_hide_on_copy},
                                  {kKeyAutoPaste, settings.auto_paste},
                                  {kKeyCapturePaused, settings.capture_paused},
-                                 {kKeyShowPanelIcon, settings.show_panel_icon}};
+                                 {kKeyShowPanelIcon, settings.show_panel_icon},
+                                 {kKeySaveConfidentialClips, settings.save_confidential_clips},
+                                 {kKeyStartAtLogin, settings.start_at_login}};
 
     std::filesystem::path temp_path = path_;
     temp_path.replace_extension(config::kSettingsTempSuffix);

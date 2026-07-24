@@ -8,6 +8,8 @@ grep -Fq 'APP_ID="io.github.akashmahedy.VoidClip"' scripts/install.sh
 grep -Fq 'sha256sum *.deb *.rpm *.tar.gz *.AppImage' .github/workflows/release.yml
 grep -Fq 'packaging/io.github.akashmahedy.VoidClip.desktop' \
   .github/workflows/release.yml
+grep -Fq 'scripts/gtk-smoke-session.sh' scripts/gtk-smoke.sh
+grep -Fq 'prebuilt_runtime_supported' scripts/install.sh
 
 if grep -Fq 'raw.githubusercontent.com/Walkercito/CopyClip' README.md scripts/install.sh ||
   grep -RqF 'packaging/dev.walkercito.CopyClip' .github; then

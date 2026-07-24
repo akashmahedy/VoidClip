@@ -15,7 +15,7 @@ endif()
 
 project(
   voidclip_engine
-  VERSION 0.3.1
+  VERSION 0.3.2
   DESCRIPTION "Keyboard-first clipboard history manager for Linux."
   LANGUAGES CXX)
 

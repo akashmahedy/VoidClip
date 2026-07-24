@@ -2,6 +2,7 @@
 
 #include "core/Enums.hpp"
 #include "core/Platform.hpp"
+#include "ui/Autostart.hpp"
 #include "ui/Constants.hpp"
 #include "ui/DesktopShortcut.hpp"
 #include "ui/GnomeShortcut.hpp"
@@ -68,9 +69,7 @@ void Application::on_activate() {
         window_ = std::make_unique<MainWindow>(application_->gobj(), history_.get(),
                                                settings_.get(), *clipboard_, paster_);
         clipboard_->start([this](const core::ClipContent& content) {
-            if (!settings_.get().settings().capture_paused) {
-                history_.get().add(content);
-            }
+            window_->handle_clipboard_change(content);
         });
         application_->hold(); // keep capturing in the background after the window hides
         // On idle (so gsettings calls don't delay the window): onboard a new user,
@@ -78,10 +77,18 @@ void Application::on_activate() {
         Glib::signal_idle().connect_once([this] {
             if (settings_.get().is_first_run()) {
                 first_run_dialog_ = std::make_unique<FirstRunDialog>(
-                    window_->native(), settings_.get().settings().hotkey,
-                    [this](const std::string& accelerator) {
-                        settings_.get().complete_first_run(accelerator);
-                        if (!register_desktop_shortcut(executable_path(), accelerator)) {
+                    window_->native(), settings_.get().settings(),
+                    [this](const core::Settings& choices) {
+                        settings_.get().complete_first_run(choices);
+                        const std::string command = executable_path();
+                        if (!set_start_at_login(choices.start_at_login, command)) {
+                            spdlog::warn("start-at-login preference could not be applied");
+                            window_->show_error(
+                                "Startup preference was not saved",
+                                "VoidClip could not change the sign-in startup setting. You can "
+                                "try again from Settings.");
+                        }
+                        if (!register_desktop_shortcut(command, choices.hotkey)) {
                             spdlog::warn("global shortcut could not be registered");
                             window_->show_error(
                                 "Shortcut was not enabled",
@@ -92,6 +99,9 @@ void Application::on_activate() {
             } else {
                 const std::string command = executable_path();
                 const std::string accelerator = settings_.get().settings().hotkey;
+                if (!set_start_at_login(settings_.get().settings().start_at_login, command)) {
+                    spdlog::warn("start-at-login preference could not be refreshed");
+                }
                 if (migrate_legacy_desktop_shortcut(command, accelerator)) {
                     spdlog::info("migrated the legacy CopyClip global shortcut");
                 } else if (is_desktop_shortcut_registered(command, accelerator) &&

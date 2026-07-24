@@ -46,6 +46,11 @@ public:
     bool add(const ClipContent& content);
     bool add(const std::string& content);
 
+    // True when a single payload exceeds the byte limit. Kept separate from
+    // add() so the UI can explain why an otherwise valid clipboard item was not
+    // saved instead of failing silently.
+    [[nodiscard]] static bool is_oversized(const ClipContent& content);
+
     // Flip the pinned flag of `content` and return the NEW pin state. As in the
     // reference, a false result also means "no such entry" (intentional dual
     // meaning); a missing entry leaves the history untouched.

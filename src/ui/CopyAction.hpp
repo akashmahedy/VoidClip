@@ -31,6 +31,12 @@ enum class CopyMode : std::uint8_t {
     PastePlainText,
 };
 
+enum class CopyOutcome : std::uint8_t {
+    Failed,
+    CopiedKeepOpen,
+    CopiedHide,
+};
+
 class CopyAction {
 public:
     using PasteFinishedCallback = std::function<void(bool)>;
@@ -45,9 +51,10 @@ public:
     CopyAction(CopyAction&&) = delete;
     CopyAction& operator=(CopyAction&&) = delete;
 
-    // Copy `content`; returns whether the caller should hide the window afterwards.
-    [[nodiscard]] bool run(const core::ClipContent& content,
-                           CopyMode mode = CopyMode::FollowSettings);
+    // Copy `content`; distinguishes a failed clipboard write from a successful
+    // copy that intentionally keeps the picker open.
+    [[nodiscard]] CopyOutcome run(const core::ClipContent& content,
+                                  CopyMode mode = CopyMode::FollowSettings);
     // Disable pending/in-flight callbacks before the owning window is destroyed.
     void cancel_pending();
 

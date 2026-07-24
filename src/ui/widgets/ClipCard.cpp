@@ -83,9 +83,8 @@ constexpr int kMetaIconSize = 12;
 } // namespace
 
 ClipCard::ClipCard(const core::ClipboardEntry& entry, std::vector<std::byte> image,
-                   std::size_t max_chars, ActionCallback on_copy, ActionCallback on_pin)
-    : entry_{entry}, max_chars_{max_chars}, on_copy_{std::move(on_copy)},
-      on_pin_{std::move(on_pin)} {
+                   std::size_t max_chars, ActionCallback on_action)
+    : entry_{entry}, max_chars_{max_chars}, on_action_{std::move(on_action)} {
     add_css_class("card");
     set_margin_bottom(kCardGap);
 
@@ -178,6 +177,44 @@ ClipCard::ClipCard(const core::ClipboardEntry& entry, std::vector<std::byte> ima
     }
     column->append(*meta);
 
+    // Keep the common actions visible. A new user should not have to discover
+    // undocumented modifier-clicks or keyboard shortcuts before they can paste,
+    // pin, or remove an item.
+    actions_ = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, kMetaSpacing);
+    actions_->set_halign(Gtk::Align::END);
+
+    auto* copy_button = Gtk::make_managed<Gtk::Button>("Copy");
+    copy_button->add_css_class("flat");
+    copy_button->signal_clicked().connect([this] { dispatch(ClipAction::Copy); });
+    actions_->append(*copy_button);
+
+    auto* paste_button = Gtk::make_managed<Gtk::Button>("Paste");
+    paste_button->add_css_class("flat");
+    paste_button->signal_clicked().connect([this] { dispatch(ClipAction::Paste); });
+    actions_->append(*paste_button);
+
+    if (entry.kind != core::ClipKind::Image) {
+        auto* plain_button = Gtk::make_managed<Gtk::Button>("Plain text");
+        plain_button->add_css_class("flat");
+        plain_button->set_tooltip_text("Paste without formatting");
+        plain_button->signal_clicked().connect([this] { dispatch(ClipAction::PastePlainText); });
+        actions_->append(*plain_button);
+    }
+
+    auto* pin_button = Gtk::make_managed<Gtk::Button>(entry.pinned ? "Unpin" : "Pin");
+    pin_button->add_css_class("flat");
+    pin_button->signal_clicked().connect([this] { dispatch(ClipAction::TogglePin); });
+    actions_->append(*pin_button);
+
+    auto* delete_button = Gtk::make_managed<Gtk::Button>();
+    delete_button->set_icon_name("user-trash-symbolic");
+    delete_button->add_css_class("flat");
+    delete_button->set_tooltip_text("Delete this clip");
+    delete_button->signal_clicked().connect([this] { dispatch(ClipAction::Delete); });
+    actions_->append(*delete_button);
+
+    column->append(*actions_);
+
     row->append(*column);
     set_child(*row);
 
@@ -211,13 +248,12 @@ void ClipCard::toggle_expand() {
 }
 
 void ClipCard::on_pressed(int /*n_press*/, double x, double y) {
-    // Presses on the expand/collapse button are handled by the button itself; the
-    // card must not also copy/pin (which would rebuild the list and undo the
-    // toggle). Image cards have no toggle button.
-    if (toggle_button_ != nullptr) {
-        if (Gtk::Widget* target = pick(x, y, Gtk::PickFlags::DEFAULT);
-            target != nullptr &&
-            (target == toggle_button_ || target->is_ancestor(*toggle_button_))) {
+    // Child buttons handle their own clicks; the row must not also perform its
+    // primary action.
+    if (Gtk::Widget* target = pick(x, y, Gtk::PickFlags::DEFAULT); target != nullptr) {
+        if ((toggle_button_ != nullptr &&
+             (target == toggle_button_ || toggle_button_->is_ancestor(*target))) ||
+            (actions_ != nullptr && (target == actions_ || actions_->is_ancestor(*target)))) {
             return;
         }
     }
@@ -229,9 +265,16 @@ void ClipCard::on_pressed(int /*n_press*/, double x, double y) {
     // GTK's active-state accounting ("Broken accounting of active state") and can
     // crash. Capture the callback and entry by value so it stays valid once the
     // card (and `this`) is gone.
-    const ActionCallback action = ctrl ? on_pin_ : on_copy_;
+    const ClipAction action = ctrl ? ClipAction::TogglePin : ClipAction::FollowSettings;
+    const ActionCallback callback = on_action_;
     const core::ClipboardEntry entry = entry_;
-    Glib::signal_idle().connect_once([action, entry] { action(entry); });
+    Glib::signal_idle().connect_once([callback, entry, action] { callback(entry, action); });
+}
+
+void ClipCard::dispatch(ClipAction action) {
+    const ActionCallback callback = on_action_;
+    const core::ClipboardEntry entry = entry_;
+    Glib::signal_idle().connect_once([callback, entry, action] { callback(entry, action); });
 }
 
 } // namespace voidclip::ui

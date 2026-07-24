@@ -144,23 +144,18 @@ void GdkClipboardSource::read_text_or_rich() {
     // Reached after a failed texture read. By now the format list has been negotiated
     // (the texture attempt forced the round-trip), so the HTML check is reliable here.
     const Glib::RefPtr<const Gdk::ContentFormats> formats = clipboard_->get_formats();
-    if (formats && formats->contain_mime_type(kMimePasswordManagerHint)) {
-        last_text_.reset();
-        last_image_hash_.clear();
-        spdlog::debug("ignored confidential clipboard content");
-        return;
-    }
+    const bool confidential = formats && formats->contain_mime_type(kMimePasswordManagerHint);
     if (formats && formats->contain_mime_type(kMimeHtml)) {
-        read_rich_text();
+        read_rich_text(confidential);
     } else {
-        read_plain_text();
+        read_plain_text(confidential);
     }
 }
 
-void GdkClipboardSource::read_plain_text() {
+void GdkClipboardSource::read_plain_text(bool confidential) {
     const Glib::RefPtr<Gio::Cancellable> cancellable = cancellable_;
     clipboard_->read_text_async(
-        [this, cancellable](Glib::RefPtr<Gio::AsyncResult>& result) {
+        [this, cancellable, confidential](Glib::RefPtr<Gio::AsyncResult>& result) {
             if (cancellable->is_cancelled()) {
                 return;
             }
@@ -176,7 +171,8 @@ void GdkClipboardSource::read_plain_text() {
                 return;
             }
             remember_text(text.raw());
-            deliver(core::ClipContent{.kind = core::ClipKind::Text, .text = text.raw()});
+            deliver(core::ClipContent{
+                .kind = core::ClipKind::Text, .text = text.raw(), .confidential = confidential});
         },
         cancellable_);
 }
@@ -186,11 +182,11 @@ void GdkClipboardSource::remember_text(const std::string& text) {
     last_image_hash_.clear();
 }
 
-void GdkClipboardSource::read_rich_text() {
+void GdkClipboardSource::read_rich_text(bool confidential) {
     const Glib::RefPtr<Gio::Cancellable> cancellable = cancellable_;
     // Read the plain-text form first (the dedup key + display text), then the HTML.
     clipboard_->read_text_async(
-        [this, cancellable](Glib::RefPtr<Gio::AsyncResult>& text_result) {
+        [this, cancellable, confidential](Glib::RefPtr<Gio::AsyncResult>& text_result) {
             if (cancellable->is_cancelled()) {
                 return;
             }
@@ -206,7 +202,8 @@ void GdkClipboardSource::read_rich_text() {
             }
             clipboard_->read_async(
                 {kMimeHtml}, Glib::PRIORITY_DEFAULT,
-                [this, cancellable, text](Glib::RefPtr<Gio::AsyncResult>& html_result) {
+                [this, cancellable, text,
+                 confidential](Glib::RefPtr<Gio::AsyncResult>& html_result) {
                     if (cancellable->is_cancelled()) {
                         return;
                     }
@@ -223,22 +220,27 @@ void GdkClipboardSource::read_rich_text() {
                     }
                     if (!stream) {
                         remember_text(text);
-                        deliver(core::ClipContent{.kind = core::ClipKind::Text, .text = text});
+                        deliver(core::ClipContent{.kind = core::ClipKind::Text,
+                                                  .text = text,
+                                                  .confidential = confidential});
                         return;
                     }
                     // Drain the HTML stream asynchronously (a synchronous read would
                     // block the main loop the X11 transfer depends on), then deliver —
                     // falling back to plain text if the payload turns out empty.
-                    drain_stream_async(stream, [this, cancellable, text](std::string html) {
-                        if (cancellable->is_cancelled()) {
-                            return;
-                        }
-                        remember_text(text);
-                        const core::ClipKind kind =
-                            html.empty() ? core::ClipKind::Text : core::ClipKind::RichText;
-                        deliver(
-                            core::ClipContent{.kind = kind, .text = text, .html = std::move(html)});
-                    });
+                    drain_stream_async(
+                        stream, [this, cancellable, text, confidential](std::string html) {
+                            if (cancellable->is_cancelled()) {
+                                return;
+                            }
+                            remember_text(text);
+                            const core::ClipKind kind =
+                                html.empty() ? core::ClipKind::Text : core::ClipKind::RichText;
+                            deliver(core::ClipContent{.kind = kind,
+                                                      .text = text,
+                                                      .html = std::move(html),
+                                                      .confidential = confidential});
+                        });
                 },
                 cancellable_);
         },

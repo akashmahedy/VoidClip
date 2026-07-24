@@ -14,7 +14,7 @@ inline constexpr std::string_view kAppId = "voidclip";
 inline constexpr std::string_view kLegacyAppId = "copyclip";
 
 // Version when running from a source tree without installed package metadata.
-inline constexpr std::string_view kAppVersion = "0.3.1";
+inline constexpr std::string_view kAppVersion = "0.3.2";
 
 inline constexpr int kDefaultMaxHistoryItems = 70;
 
@@ -33,10 +33,14 @@ inline constexpr int kInstanceSocketBacklog = 1;
 inline constexpr std::string_view kSettingsTempSuffix = ".json.tmp";
 
 inline constexpr std::string_view kXdgDataHomeEnv = "XDG_DATA_HOME";
+inline constexpr std::string_view kXdgConfigHomeEnv = "XDG_CONFIG_HOME";
 inline constexpr std::string_view kHomeEnv = "HOME";
 inline constexpr std::string_view kXdgRuntimeDirEnv = "XDG_RUNTIME_DIR";
 
 inline constexpr std::string_view kLocalShareSubdir = ".local/share";
+inline constexpr std::string_view kConfigSubdir = ".config";
+inline constexpr std::string_view kAutostartSubdir = "autostart";
+inline constexpr std::string_view kAutostartFileName = "io.github.akashmahedy.VoidClip.desktop";
 inline constexpr std::string_view kRuntimeDirFallback = "/tmp";
 
 // $XDG_DATA_HOME/voidclip, falling back to $HOME/.local/share/voidclip when
@@ -51,6 +55,10 @@ inline constexpr std::string_view kRuntimeDirFallback = "/tmp";
 [[nodiscard]] std::filesystem::path history_db();
 
 [[nodiscard]] std::filesystem::path settings_file();
+
+// Per-user autostart override. A user entry with this name takes precedence over
+// the system package's /etc/xdg/autostart entry.
+[[nodiscard]] std::filesystem::path autostart_file();
 
 // Falls back to /tmp when $XDG_RUNTIME_DIR is unset or empty.
 [[nodiscard]] std::filesystem::path runtime_dir();

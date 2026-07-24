@@ -208,6 +208,16 @@ TEST_F(SqliteHistoryRepositoryTest, RichTextEntryRoundTrips) {
     EXPECT_EQ(entries[0].html, "<b>bold text</b>");
 }
 
+TEST_F(SqliteHistoryRepositoryTest, ConfidentialFlagRoundTrips) {
+    auto repository = repo();
+    repository.add(core::ClipboardEntry{
+        .content = "secret", .created_at = date_utc(2026, 1, 1), .confidential = true});
+
+    const std::vector<core::ClipboardEntry> entries = repository.all();
+    ASSERT_EQ(entries.size(), 1U);
+    EXPECT_TRUE(entries.front().confidential);
+}
+
 // A database created before the rich-content columns existed is migrated on open;
 // its legacy rows read back as plain text and keep their pin.
 TEST_F(SqliteHistoryRepositoryTest, MigratesPreRichContentSchema) {

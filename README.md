@@ -29,11 +29,11 @@ Linux Mint 22 XFCE/X11 is a first-class target. VoidClip registers its global sh
 | 🖼️ **Image thumbnails** | Copied and pasted images render as thumbnails instead of raw byte counts. |
 | 📌 **Pinning** | Pin the clips you reuse so they stay at the top. |
 | 🔍 **Fuzzy search** | Start typing to filter the whole history. |
-| ⌨️ **Keyboard-first picker** | Use arrows, Enter, number shortcuts, Delete, and pin controls without leaving the search field. |
+| ⌨️ **Keyboard-first picker** | Use arrows, Enter, number shortcuts, safe `Alt+Delete`, and pin controls without leaving the search field. |
 | 🖥️ **XFCE + GNOME shortcuts** | A configurable shortcut (default `Super+V`) is registered automatically through Xfconf or GNOME Settings. |
 | 📋 **Click to paste** | Click a clip to copy it, and optionally auto-paste it into the window you came from. |
 | ⚠️ **Honest failure feedback** | Shortcut and auto-paste failures stay visible, with the clip left safely on the clipboard. |
-| 🛡️ **Privacy controls** | Pause recording instantly; password-manager clips carrying the KDE secret hint are ignored. |
+| 🛡️ **Privacy controls** | Pause recording, ignore the next copy, or explicitly opt in to saving password-manager clips locally. |
 | 🧹 **Paste as plain text** | Strip HTML formatting when pasting a rich-text entry. |
 | 🌗 **Themes** | Dark, light, or follow the system. |
 | 💾 **SQLite storage** | History lives in a WAL-mode SQLite database with de-duplication and a configurable size cap. |
@@ -43,6 +43,17 @@ Linux Mint 22 XFCE/X11 is a first-class target. VoidClip registers its global sh
 
 ## 📦 Install
 
+### Linux Mint XFCE (easiest)
+
+For Linux Mint 22 on a typical Intel/AMD computer:
+
+1. [Download the VoidClip `.deb`](https://github.com/akashmahedy/VoidClip/releases/latest/download/voidclip_0.3.2_amd64.deb).
+2. Double-click the downloaded file.
+3. Select **Install Package**, then open **VoidClip** from the applications menu.
+
+No terminal commands are required. Linux Mint 21.x cannot use the current Mint 22
+binary release; do not install the Mint 22 `.deb` there.
+
 ### One-line installer
 
 ```bash
@@ -51,13 +62,18 @@ curl -fsSL https://raw.githubusercontent.com/akashmahedy/VoidClip/main/scripts/i
 
 The script detects your distro and architecture and installs a `.deb` or `.rpm` when it can, falls back to an AppImage, and builds from source if neither fits. Release downloads are verified against published SHA-256 checksums, and the script adds VoidClip to your login autostart.
 
-Prebuilt DEB packages target Ubuntu 24.04 / Linux Mint 22 or newer (`glibc 2.38+`). Linux Mint 21.x users should use the AppImage when available or build on their own system. Direct DEB/RPM installs include an XDG autostart entry, so they behave the same way as the installer-script path.
+Prebuilt packages currently target Ubuntu 24.04 / Linux Mint 22 or newer
+(`glibc 2.38+`). Direct DEB/RPM installs include an XDG autostart entry, so they
+behave the same way as the installer-script path.
 
 To remove it:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/akashmahedy/VoidClip/main/scripts/install.sh | bash -s -- --uninstall
 ```
+
+The uninstaller asks whether to keep or remove your saved history. To remove the
+application and its local history/settings in one command, use `--purge-data`.
 
 ### Build from source
 
@@ -108,7 +124,13 @@ If every paste method fails, VoidClip reopens with a clear message. The selected
 
 Launch `VoidClip` once and it stays running in the background. Press your hotkey to toggle the window, type to fuzzy-search, and use the keyboard or mouse to choose a clip.
 
-Open **Settings** to change the theme, rebind the hotkey, pause recording, toggle auto-paste and auto-hide-on-copy, show or hide the panel icon, and set the maximum history size.
+Open **Settings** to change the theme, rebind the hotkey, pause recording, toggle
+auto-paste and auto-hide-on-copy, choose whether password-manager clips are saved,
+control sign-in startup and the panel icon, check for updates, and set the maximum
+history size.
+
+Every history card has visible **Copy**, **Paste**, **Plain text**, **Pin/Unpin**,
+and delete controls. A deleted clip can be restored immediately with **Undo**.
 
 To start hidden — for autostart entries — pass `--background`.
 
@@ -126,7 +148,7 @@ To start hidden — for autostart entries — pass `--background`.
 | <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> | Paste the selected clip as plain text |
 | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>9</kbd> | Copy one of the first nine visible clips |
 | <kbd>Ctrl</kbd>+<kbd>P</kbd> | Pin / unpin the selected clip |
-| <kbd>Delete</kbd> | Remove the selected clip |
+| <kbd>Alt</kbd>+<kbd>Delete</kbd> | Remove the selected clip (with Undo) |
 | <kbd>Ctrl</kbd>+<kbd>,</kbd> | Open Settings |
 | <kbd>Esc</kbd> | Hide the window |
 
@@ -141,9 +163,16 @@ VoidClip keeps its state under `~/.local/share/voidclip/`:
 
 New files are created with user-only permissions. Clipboard de-duplication state is kept only in memory, not in a separate plaintext cache.
 
-Keys in `settings.json` include `theme`, `hotkey`, `max_history_items`, `auto_hide_on_copy`, `auto_paste`, `capture_paused`, and `first_run_completed`. The Settings dialog is the easier way to change them.
+Keys in `settings.json` include `theme`, `hotkey`, `max_history_items`,
+`auto_hide_on_copy`, `auto_paste`, `capture_paused`, `save_confidential_clips`,
+`start_at_login`, and `first_run_completed`. The Settings dialog is the easier
+way to change them.
 
-On the first v0.3.1 launch, an existing `~/.local/share/copyclip/` profile is moved to the VoidClip directory only when the new directory does not already exist. Existing VoidClip data is never overwritten. Individual text/rich-text payloads are capped at 4 MiB and image payloads at 25 MiB before they reach the database.
+On the first v0.3.1-or-newer launch, an existing `~/.local/share/copyclip/`
+profile is moved to the VoidClip directory only when the new directory does not
+already exist. Existing VoidClip data is never overwritten. Individual
+text/rich-text payloads are capped at 4 MiB and image payloads at 25 MiB before
+they reach the database; oversized items now produce visible feedback.
 
 ---
 

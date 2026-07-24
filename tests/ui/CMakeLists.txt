@@ -2,4 +2,5 @@ voidclip_add_test(clip_text_test SOURCES ClipTextTest.cpp LIBS voidclip::ui_text
 voidclip_add_test(shortcut_text_test SOURCES ShortcutTextTest.cpp LIBS voidclip::ui_text)
 voidclip_add_test(fuzzy_test SOURCES FuzzyTest.cpp LIBS voidclip::ui_text)
 voidclip_add_test(copy_action_test SOURCES CopyActionTest.cpp LIBS voidclip::ui)
+voidclip_add_test(autostart_test SOURCES AutostartTest.cpp LIBS voidclip::ui)
 voidclip_add_test(desktop_shortcut_test SOURCES DesktopShortcutTest.cpp LIBS voidclip::ui)

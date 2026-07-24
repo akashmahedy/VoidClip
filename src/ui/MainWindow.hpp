@@ -20,6 +20,7 @@
 
 #include <adwaita.h>
 
+#include <gtkmm/box.h>
 #include <gtkmm/button.h>
 #include <gtkmm/label.h>
 #include <gtkmm/listbox.h>
@@ -36,6 +37,7 @@
 namespace voidclip::ui {
 
 class ClipCard;
+enum class ClipAction;
 
 class MainWindow {
 public:
@@ -58,6 +60,9 @@ public:
     [[nodiscard]] GtkWidget* native() const;
     // Present a user-facing problem with a single acknowledgement action.
     void show_error(const std::string& heading, const std::string& body);
+    // Apply privacy and size policy to a newly captured clipboard item, with
+    // visible feedback for user-requested one-shot ignores and rejected payloads.
+    void handle_clipboard_change(const core::ClipContent& content);
 
 private:
     void build_ui(GtkApplication* application);
@@ -73,12 +78,18 @@ private:
     void select_index(std::size_t index);
     bool on_key_pressed(unsigned int keyval, unsigned int keycode, Gdk::ModifierType state);
     void copy(const core::ClipboardEntry& entry, CopyMode mode = CopyMode::FollowSettings);
+    void handle_card_action(const core::ClipboardEntry& entry, ClipAction action);
     void pin(const std::string& content);
     void remove_selected();
+    void remove(const core::ClipboardEntry& entry);
+    void undo_delete();
     void clear_history();
     void confirm_clear_history();
     void toggle_capture();
+    void toggle_ignore_next_copy();
     void refresh_capture_button();
+    void refresh_status_banner();
+    void show_toast(const std::string& message);
     void open_settings();
     [[nodiscard]] bool matches(const std::string& content) const;
 
@@ -100,6 +111,15 @@ private:
     Gtk::Label* empty_title_ = nullptr;
     Gtk::Label* empty_description_ = nullptr;
     Gtk::Button* capture_button_ = nullptr;
+    Gtk::Button* ignore_button_ = nullptr;
+    Gtk::Box* status_banner_ = nullptr;
+    Gtk::Label* status_label_ = nullptr;
+    Gtk::Button* status_button_ = nullptr;
+    AdwToastOverlay* toast_overlay_ = nullptr;
+    AdwToast* undo_toast_ = nullptr;
+    core::ClipContent deleted_content_;
+    bool deleted_was_pinned_ = false;
+    bool ignore_next_copy_armed_ = false;
     std::unique_ptr<SettingsDialog> settings_dialog_;
     std::unique_ptr<StatusNotifierItem> tray_;
     core::HistoryService::Subscription history_subscription_;

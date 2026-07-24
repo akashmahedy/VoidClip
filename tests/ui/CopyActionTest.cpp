@@ -20,6 +20,7 @@ using voidclip::testing::FakeClock;
 using voidclip::testing::InMemoryHistoryRepository;
 using voidclip::testing::InMemorySettingsRepository;
 using voidclip::testing::text_clip;
+using voidclip::ui::CopyOutcome;
 
 // Records paste() calls without spawning any input tool.
 struct FakePaster final : public voidclip::ui::Paster {
@@ -52,7 +53,7 @@ struct CopyActionHarness {
 
 TEST(CopyActionTest, WritesClipboardAndRecordsHistory) {
     CopyActionHarness harness;
-    EXPECT_TRUE(harness.action.run(text_clip("hello"))); // default auto-hide -> hide
+    EXPECT_EQ(harness.action.run(text_clip("hello")), CopyOutcome::CopiedHide);
     EXPECT_EQ(harness.clipboard.text, "hello");
     EXPECT_EQ(harness.history.entries().size(), 1U);
 }
@@ -60,26 +61,27 @@ TEST(CopyActionTest, WritesClipboardAndRecordsHistory) {
 TEST(CopyActionTest, HidesWhenAutoHideOn) {
     CopyActionHarness harness;
     harness.set(true, false);
-    EXPECT_TRUE(harness.action.run(text_clip("x")));
+    EXPECT_EQ(harness.action.run(text_clip("x")), CopyOutcome::CopiedHide);
 }
 
 TEST(CopyActionTest, DoesNotHideWhenBothOff) {
     CopyActionHarness harness;
     harness.set(false, false);
-    EXPECT_FALSE(harness.action.run(text_clip("x")));
+    EXPECT_EQ(harness.action.run(text_clip("x")), CopyOutcome::CopiedKeepOpen);
 }
 
 TEST(CopyActionTest, HidesWhenAutoPasteEvenWithAutoHideOff) {
     CopyActionHarness harness;
     harness.set(false, true);
-    EXPECT_TRUE(harness.action.run(text_clip("x")));
+    EXPECT_EQ(harness.action.run(text_clip("x")), CopyOutcome::CopiedHide);
 }
 
 TEST(CopyActionTest, ExplicitCopyOnlyHidesWithoutAutoPaste) {
     CopyActionHarness harness;
     harness.set(false, false);
 
-    EXPECT_TRUE(harness.action.run(text_clip("x"), voidclip::ui::CopyMode::CopyOnly));
+    EXPECT_EQ(harness.action.run(text_clip("x"), voidclip::ui::CopyMode::CopyOnly),
+              CopyOutcome::CopiedHide);
     EXPECT_EQ(harness.clipboard.text, "x");
 }
 
@@ -88,7 +90,8 @@ TEST(CopyActionTest, PlainTextModeDropsRichFormatting) {
     const voidclip::core::ClipContent rich{
         .kind = voidclip::core::ClipKind::RichText, .text = "hello", .html = "<b>hello</b>"};
 
-    EXPECT_TRUE(harness.action.run(rich, voidclip::ui::CopyMode::PastePlainText));
+    EXPECT_EQ(harness.action.run(rich, voidclip::ui::CopyMode::PastePlainText),
+              CopyOutcome::CopiedHide);
     EXPECT_EQ(harness.clipboard.written.kind, voidclip::core::ClipKind::Text);
     EXPECT_EQ(harness.clipboard.written.text, "hello");
     EXPECT_TRUE(harness.clipboard.written.html.empty());

@@ -93,9 +93,19 @@ bool HistoryService::add(const std::string& content) {
     return add(ClipContent{.kind = ClipKind::Text, .text = content});
 }
 
+bool HistoryService::is_oversized(const ClipContent& content) {
+    if (content.kind == ClipKind::Image) {
+        return content.image.size() > kMaxImagePayloadBytes;
+    }
+    return content.text.size() > kMaxTextPayloadBytes ||
+           content.html.size() > kMaxTextPayloadBytes ||
+           content.html.size() > kMaxTextPayloadBytes - content.text.size();
+}
+
 bool HistoryService::add(const ClipContent& content) {
     ClipboardEntry entry;
     entry.kind = content.kind;
+    entry.confidential = content.confidential;
     if (content.kind == ClipKind::Image) {
         if (content.image.empty() || content.image.size() > kMaxImagePayloadBytes) {
             return false;
@@ -105,11 +115,7 @@ bool HistoryService::add(const ClipContent& content) {
         entry.image_width = content.image_width;
         entry.image_height = content.image_height;
     } else {
-        const bool payload_too_large =
-            content.text.size() > kMaxTextPayloadBytes ||
-            content.html.size() > kMaxTextPayloadBytes ||
-            content.html.size() > kMaxTextPayloadBytes - content.text.size();
-        if (is_blank(content.text) || payload_too_large) {
+        if (is_blank(content.text) || is_oversized(content)) {
             return false;
         }
         entry.content = content.text;
@@ -127,7 +133,8 @@ bool HistoryService::add(const ClipContent& content) {
         const bool same_representation = existing.has_value() && existing->kind == entry.kind &&
                                          existing->html == entry.html &&
                                          existing->image_width == entry.image_width &&
-                                         existing->image_height == entry.image_height;
+                                         existing->image_height == entry.image_height &&
+                                         existing->confidential == entry.confidential;
         if (entry.content == last_added_ && same_representation) {
             return false;
         }

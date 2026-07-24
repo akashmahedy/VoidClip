@@ -43,16 +43,21 @@ private:
     static void on_capture_paused_toggled(GObject* row, GParamSpec* spec, gpointer self);
     static void on_history_limit_changed(GObject* row, GParamSpec* spec, gpointer self);
     static void on_panel_icon_toggled(GObject* row, GParamSpec* spec, gpointer self);
+    static void on_confidential_toggled(GObject* row, GParamSpec* spec, gpointer self);
+    static void on_startup_toggled(GObject* row, GParamSpec* spec, gpointer self);
     static void on_dialog_closed(AdwDialog* dialog, gpointer self);
 
     void apply_theme(unsigned int index);
-    void apply_accelerator(const std::string& accelerator);
-    void apply_shortcut_enabled(bool active);
+    [[nodiscard]] bool apply_accelerator(const std::string& accelerator);
+    [[nodiscard]] bool apply_shortcut_enabled(bool active);
     void apply_auto_hide(bool active);
     void apply_auto_paste(bool active);
     void apply_capture_paused(bool paused);
     void apply_history_limit(int max_items);
     void apply_panel_icon(bool active);
+    void apply_confidential(bool active);
+    [[nodiscard]] bool apply_startup(bool active);
+    void show_error(const std::string& heading, const std::string& body);
 
     std::reference_wrapper<core::SettingsService> settings_;
     std::reference_wrapper<core::HistoryService> history_;
@@ -60,6 +65,9 @@ private:
     PanelIconChangedCallback on_panel_icon_changed_;
     ClosedCallback on_closed_;
     std::unique_ptr<ShortcutChooser> shortcut_chooser_;
+    AdwDialog* dialog_ = nullptr;
+    bool suppress_shortcut_ = false;
+    bool suppress_startup_ = false;
 };
 
 } // namespace voidclip::ui
