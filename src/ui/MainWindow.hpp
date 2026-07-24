@@ -28,6 +28,7 @@
 #include <gtkmm/stack.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -37,7 +38,7 @@
 namespace voidclip::ui {
 
 class ClipCard;
-enum class ClipAction;
+enum class ClipAction : std::uint8_t;
 
 class MainWindow {
 public:
