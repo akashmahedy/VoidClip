@@ -3,6 +3,7 @@
 #include "core/Enums.hpp"
 #include "core/Models.hpp"
 #include "ui/Constants.hpp"
+#include "ui/DesktopShortcut.hpp"
 #include "ui/GnomeShortcut.hpp"
 
 #include <adwaita.h>
@@ -22,6 +23,9 @@ namespace {
 // Theme combo options, in display order; the index maps to a core::Theme.
 constexpr std::array<core::Theme, 3> kThemeOrder{core::Theme::System, core::Theme::Light,
                                                  core::Theme::Dark};
+constexpr double kHistoryMinimum = 10.0;
+constexpr double kHistoryMaximum = 1000.0;
+constexpr double kHistoryStep = 10.0;
 
 [[nodiscard]] unsigned int theme_index(core::Theme theme) {
     for (unsigned int i = 0; i < kThemeOrder.size(); ++i) {
@@ -61,10 +65,11 @@ void fill_combo(AdwComboRow* row, const std::vector<std::string>& options, unsig
 } // namespace
 
 SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& settings,
+                               core::HistoryService& history,
                                ThemeChangedCallback on_theme_changed,
                                PanelIconChangedCallback on_panel_icon_changed,
                                ClosedCallback on_closed)
-    : settings_{settings}, on_theme_changed_{std::move(on_theme_changed)},
+    : settings_{settings}, history_{history}, on_theme_changed_{std::move(on_theme_changed)},
       on_panel_icon_changed_{std::move(on_panel_icon_changed)}, on_closed_{std::move(on_closed)} {
     const core::Settings& current = settings.settings();
 
@@ -89,7 +94,8 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     gtk_widget_set_tooltip_text(GTK_WIDGET(shortcut_enabled_row),
                                 "Open CopyClip from anywhere with a keyboard shortcut");
     adw_switch_row_set_active(shortcut_enabled_row,
-                              static_cast<gboolean>(is_gnome_shortcut_registered()));
+                              static_cast<gboolean>(is_desktop_shortcut_registered(
+                                  executable_path(), current.hotkey)));
     adw_preferences_group_add(shortcut_group, GTK_WIDGET(shortcut_enabled_row));
     g_signal_connect(shortcut_enabled_row, "notify::active",
                      G_CALLBACK(&SettingsDialog::on_shortcut_toggled), this);
@@ -119,6 +125,17 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     g_signal_connect(auto_paste_row, "notify::active",
                      G_CALLBACK(&SettingsDialog::on_auto_paste_toggled), this);
 
+    auto* capture_paused_row = ADW_SWITCH_ROW(adw_switch_row_new());
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(capture_paused_row), "Pause recording");
+    gtk_widget_set_tooltip_text(
+        GTK_WIDGET(capture_paused_row),
+        "Keep CopyClip running without saving new clipboard contents");
+    adw_switch_row_set_active(capture_paused_row,
+                              static_cast<gboolean>(current.capture_paused));
+    adw_preferences_group_add(behaviour_group, GTK_WIDGET(capture_paused_row));
+    g_signal_connect(capture_paused_row, "notify::active",
+                     G_CALLBACK(&SettingsDialog::on_capture_paused_toggled), this);
+
     auto* panel_icon_row = ADW_SWITCH_ROW(adw_switch_row_new());
     adw_preferences_row_set_title(ADW_PREFERENCES_ROW(panel_icon_row), "Show panel icon");
     gtk_widget_set_tooltip_text(
@@ -128,6 +145,17 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     adw_preferences_group_add(behaviour_group, GTK_WIDGET(panel_icon_row));
     g_signal_connect(panel_icon_row, "notify::active",
                      G_CALLBACK(&SettingsDialog::on_panel_icon_toggled), this);
+
+    AdwPreferencesGroup* history_group = add_group(page, "History");
+    auto* history_limit_row =
+        ADW_SPIN_ROW(adw_spin_row_new_with_range(kHistoryMinimum, kHistoryMaximum, kHistoryStep));
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(history_limit_row), "Maximum items");
+    gtk_widget_set_tooltip_text(GTK_WIDGET(history_limit_row),
+                                "Older unpinned clips are removed first");
+    adw_spin_row_set_value(history_limit_row, static_cast<double>(current.max_history_items));
+    adw_preferences_group_add(history_group, GTK_WIDGET(history_limit_row));
+    g_signal_connect(history_limit_row, "notify::value",
+                     G_CALLBACK(&SettingsDialog::on_history_limit_changed), this);
 
     GtkWidget* toolbar = adw_toolbar_view_new();
     adw_toolbar_view_add_top_bar(ADW_TOOLBAR_VIEW(toolbar), adw_header_bar_new());
@@ -150,7 +178,10 @@ void SettingsDialog::on_shortcut_toggled(GObject* row, GParamSpec* /*spec*/, gpo
         adw_switch_row_get_active(ADW_SWITCH_ROW(row)) != FALSE);
     // Registration can fail (e.g. off GNOME); make the switch reflect what actually
     // happened rather than the user's intent, so it can't show "on" while unbound.
-    adw_switch_row_set_active(ADW_SWITCH_ROW(row), is_gnome_shortcut_registered() ? TRUE : FALSE);
+    const core::Settings& current = static_cast<SettingsDialog*>(self)->settings_.get().settings();
+    adw_switch_row_set_active(
+        ADW_SWITCH_ROW(row),
+        is_desktop_shortcut_registered(executable_path(), current.hotkey) ? TRUE : FALSE);
 }
 
 void SettingsDialog::on_auto_hide_toggled(GObject* row, GParamSpec* /*spec*/, gpointer self) {
@@ -167,18 +198,21 @@ void SettingsDialog::apply_theme(unsigned int index) {
 
 void SettingsDialog::apply_accelerator(const std::string& accelerator) {
     core::Settings updated = settings_.get().settings();
+    const std::string previous = updated.hotkey;
+    if (is_desktop_shortcut_registered(executable_path(), previous) &&
+        !rebind_desktop_shortcut(executable_path(), previous, accelerator)) {
+        spdlog::warn("global shortcut could not be rebound to {}", accelerator);
+        return;
+    }
     updated.hotkey = accelerator;
     settings_.get().update(updated);
-    // Only refresh the binding if the shortcut is currently enabled.
-    if (is_gnome_shortcut_registered()) {
-        register_gnome_shortcut(executable_path(), updated.hotkey);
-    }
 }
 
 void SettingsDialog::apply_shortcut_enabled(bool active) {
-    const bool ok =
-        active ? register_gnome_shortcut(executable_path(), settings_.get().settings().hotkey)
-               : unregister_gnome_shortcut();
+    const std::string command = executable_path();
+    const std::string accelerator = settings_.get().settings().hotkey;
+    const bool ok = active ? register_desktop_shortcut(command, accelerator)
+                           : unregister_desktop_shortcut(command, accelerator);
     if (!ok) {
         spdlog::warn("global shortcut could not be {}", active ? "registered" : "removed");
     }
@@ -195,10 +229,33 @@ void SettingsDialog::on_auto_paste_toggled(GObject* row, GParamSpec* /*spec*/, g
         adw_switch_row_get_active(ADW_SWITCH_ROW(row)) != FALSE);
 }
 
+void SettingsDialog::on_capture_paused_toggled(GObject* row, GParamSpec* /*spec*/, gpointer self) {
+    static_cast<SettingsDialog*>(self)->apply_capture_paused(
+        adw_switch_row_get_active(ADW_SWITCH_ROW(row)) != FALSE);
+}
+
+void SettingsDialog::on_history_limit_changed(GObject* row, GParamSpec* /*spec*/, gpointer self) {
+    static_cast<SettingsDialog*>(self)->apply_history_limit(
+        static_cast<int>(adw_spin_row_get_value(ADW_SPIN_ROW(row))));
+}
+
 void SettingsDialog::apply_auto_paste(bool active) {
     core::Settings updated = settings_.get().settings();
     updated.auto_paste = active;
     settings_.get().update(updated);
+}
+
+void SettingsDialog::apply_capture_paused(bool paused) {
+    core::Settings updated = settings_.get().settings();
+    updated.capture_paused = paused;
+    settings_.get().update(updated);
+}
+
+void SettingsDialog::apply_history_limit(int max_items) {
+    core::Settings updated = settings_.get().settings();
+    updated.max_history_items = max_items;
+    settings_.get().update(updated);
+    history_.get().set_max_items(max_items);
 }
 
 void SettingsDialog::on_panel_icon_toggled(GObject* row, GParamSpec* /*spec*/, gpointer self) {

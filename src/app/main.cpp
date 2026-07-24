@@ -20,12 +20,21 @@
 
 #include <QGuiApplication>
 
+#include <sys/stat.h>
+
 #include <exception>
 #include <memory>
+
+namespace {
+
+constexpr mode_t kPrivateDataUmask = 0077;
+
+} // namespace
 
 int main(int argc, char** argv) {
     using namespace copyclip;
 
+    ::umask(kPrivateDataUmask);
     runtime::configure_logging();
 
     runtime::SingleInstanceGuard guard{config::instance_socket()};

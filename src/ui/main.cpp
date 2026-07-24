@@ -17,6 +17,8 @@
 #include <glib.h>
 #include <spdlog/spdlog.h>
 
+#include <sys/stat.h>
+
 #include <cstddef>
 #include <exception>
 #include <span>
@@ -27,8 +29,18 @@
 #include <malloc.h> // mallopt / M_ARENA_MAX — cap per-thread arenas (glibc only)
 #endif
 
+namespace {
+
+constexpr mode_t kPrivateDataUmask = 0077;
+
+} // namespace
+
 int main(int argc, char** argv) {
     using namespace copyclip;
+
+    // Clipboard history can contain passwords and private documents. New data
+    // directories/files must be accessible only to the current user.
+    ::umask(kPrivateDataUmask);
 
     // Cap glibc's malloc arenas before anything allocates much: GLib/GTK spawn
     // several worker threads and unbounded per-thread arenas keep freed memory

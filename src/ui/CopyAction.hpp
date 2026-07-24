@@ -18,6 +18,16 @@
 
 namespace copyclip::ui {
 
+// Explicit keyboard actions can override the persistent auto-paste preference.
+// FollowSettings preserves click behavior; the other modes always close the
+// picker after a successful clipboard write.
+enum class CopyMode {
+    FollowSettings,
+    CopyOnly,
+    Paste,
+    PastePlainText,
+};
+
 class CopyAction {
 public:
     CopyAction(core::ClipboardSource& clipboard, core::HistoryService& history,
@@ -30,7 +40,8 @@ public:
     CopyAction& operator=(CopyAction&&) = delete;
 
     // Copy `content`; returns whether the caller should hide the window afterwards.
-    [[nodiscard]] bool run(const core::ClipContent& content);
+    [[nodiscard]] bool run(const core::ClipContent& content,
+                           CopyMode mode = CopyMode::FollowSettings);
 
 private:
     std::reference_wrapper<core::ClipboardSource> clipboard_;

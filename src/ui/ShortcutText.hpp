@@ -12,7 +12,7 @@ namespace copyclip::ui {
 // A built-in preset offered as a one-tap quick-pick in the shortcut UI.
 struct QuickPick {
     std::string label;       // human label, e.g. "Super+V"
-    std::string accelerator; // GNOME accelerator, e.g. "<Super>v"
+    std::string accelerator; // GTK accelerator, e.g. "<Super>v"
 };
 
 // The built-in presets as quick-picks, in catalog order, so the capture UI can

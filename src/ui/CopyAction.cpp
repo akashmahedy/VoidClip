@@ -22,16 +22,28 @@ CopyAction::~CopyAction() {
     paste_connection_.disconnect();
 }
 
-bool CopyAction::run(const core::ClipContent& content) {
-    if (!clipboard_.get().write(content)) {
+bool CopyAction::run(const core::ClipContent& content, CopyMode mode) {
+    core::ClipContent resolved = content;
+    if (mode == CopyMode::PastePlainText && resolved.kind == core::ClipKind::RichText) {
+        resolved.kind = core::ClipKind::Text;
+        resolved.html.clear();
+    }
+
+    if (!clipboard_.get().write(resolved)) {
         // The clipboard rejected the write; don't record it or hide the window, so
         // the user isn't misled into thinking the copy succeeded.
         spdlog::warn("clipboard write failed; clip not recorded");
         return false;
     }
+    // Paste-as-plain-text changes only the outgoing clipboard representation.
+    // Keep the original rich entry in history so this one action does not
+    // permanently discard formatting the user may want next time.
     history_.get().add(content);
     const core::Settings& settings = settings_.get().settings();
-    if (settings.auto_paste) {
+    const bool should_paste =
+        mode == CopyMode::Paste || mode == CopyMode::PastePlainText ||
+        (mode == CopyMode::FollowSettings && settings.auto_paste);
+    if (should_paste) {
         // Cancel any still-pending paste, then schedule one for after focus returns.
         // A connection (not connect_once) so a pending paste can be disconnected on
         // destruction; the slot returns false to run exactly once.
@@ -43,7 +55,7 @@ bool CopyAction::run(const core::ClipContent& content) {
             },
             kPasteDelayMs);
     }
-    return settings.auto_hide_on_copy || settings.auto_paste;
+    return mode != CopyMode::FollowSettings || settings.auto_hide_on_copy || should_paste;
 }
 
 } // namespace copyclip::ui

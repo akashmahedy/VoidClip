@@ -87,6 +87,21 @@ TEST_F(SqliteHistoryRepositoryTest, AddThenAllRoundtrip) {
     EXPECT_FALSE(entries[0].pinned);
 }
 
+#ifndef _WIN32
+TEST_F(SqliteHistoryRepositoryTest, DatabaseFilesArePrivateToCurrentUser) {
+    auto repository = repo();
+    repository.add(core::ClipboardEntry{
+        .content = "private", .created_at = date_utc(2026, 1, 1), .pinned = false});
+
+    constexpr std::filesystem::perms forbidden =
+        std::filesystem::perms::group_all | std::filesystem::perms::others_all;
+    EXPECT_EQ(std::filesystem::status(db_path()).permissions() & forbidden,
+              std::filesystem::perms::none);
+    EXPECT_EQ(std::filesystem::status(db_path().parent_path()).permissions() & forbidden,
+              std::filesystem::perms::none);
+}
+#endif
+
 // Re-adding the same content replaces the row (content is the primary key), so
 // the history holds a single entry.
 TEST_F(SqliteHistoryRepositoryTest, AddSameContentReplaces) {

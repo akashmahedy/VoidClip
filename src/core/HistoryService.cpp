@@ -87,7 +87,7 @@ namespace {
 } // namespace
 
 HistoryService::HistoryService(HistoryRepository& repository, Clock& clock, int max_items)
-    : repository_{repository}, clock_{clock}, max_items_{max_items} {}
+    : repository_{repository}, clock_{clock}, max_items_{std::max(1, max_items)} {}
 
 bool HistoryService::add(const std::string& content) {
     return add(ClipContent{.kind = ClipKind::Text, .text = content});
@@ -120,7 +120,11 @@ bool HistoryService::add(const ClipContent& content) {
         // Collapse a rapid duplicate — a re-copy of the current item, or a backend
         // that signals one clipboard change twice — into a no-op while that content
         // is still the last recorded and still present (no churn, no notification).
-        if (entry.content == last_added_ && existing.has_value()) {
+        const bool same_representation =
+            existing.has_value() && existing->kind == entry.kind && existing->html == entry.html &&
+            existing->image_width == entry.image_width &&
+            existing->image_height == entry.image_height;
+        if (entry.content == last_added_ && same_representation) {
             return false;
         }
         entry.pinned = existing.has_value() && existing->pinned;
@@ -166,6 +170,15 @@ void HistoryService::clear_unpinned() {
     {
         const std::scoped_lock lock{mutex_};
         repository_.clear_unpinned();
+    }
+    notify();
+}
+
+void HistoryService::set_max_items(int max_items) {
+    {
+        const std::scoped_lock lock{mutex_};
+        max_items_ = std::max(1, max_items);
+        enforce_cap();
     }
     notify();
 }

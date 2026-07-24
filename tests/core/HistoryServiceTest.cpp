@@ -215,6 +215,31 @@ TEST(HistoryServiceTest, EvictionKeepsPinnedAndMostRecentUnpinned) {
               (std::set<std::string>{"pinned", "recent"})); // oldest unpinned evicted
 }
 
+TEST(HistoryServiceTest, ReducingCapacityEvictsImmediately) {
+    ServiceHarness harness{3};
+    harness.service.add("old");
+    harness.clock.advance(kStep);
+    harness.service.add("middle");
+    harness.clock.advance(kStep);
+    harness.service.add("new");
+
+    harness.service.set_max_items(2);
+
+    EXPECT_EQ(content_set(harness.service.entries()),
+              (std::set<std::string>{"middle", "new"}));
+}
+
+TEST(HistoryServiceTest, CapacityIsClampedToAtLeastOne) {
+    ServiceHarness harness{3};
+    harness.service.add("old");
+    harness.clock.advance(kStep);
+    harness.service.add("new");
+
+    harness.service.set_max_items(0);
+
+    EXPECT_EQ(content_set(harness.service.entries()), (std::set<std::string>{"new"}));
+}
+
 // Beyond the oracle: proves notify() runs OUTSIDE the lock. The callback
 // re-enters entries(), which locks the same non-reentrant mutex, so notifying
 // under the lock would deadlock; it must also observe the freshly added entry,
@@ -256,6 +281,18 @@ TEST(HistoryServiceTest, AddingRichTextKeepsHtml) {
     ASSERT_EQ(entries.size(), 1U);
     EXPECT_EQ(entries.front().kind, copyclip::core::ClipKind::RichText);
     EXPECT_EQ(entries.front().content, "hi");
+    EXPECT_EQ(entries.front().html, "<b>hi</b>");
+}
+
+TEST(HistoryServiceTest, RichTextReplacesPlainTextWithTheSameVisibleContent) {
+    ServiceHarness harness;
+    harness.service.add("hi");
+    harness.service.add(copyclip::core::ClipContent{
+        .kind = copyclip::core::ClipKind::RichText, .text = "hi", .html = "<b>hi</b>"});
+
+    const auto entries = harness.service.entries();
+    ASSERT_EQ(entries.size(), 1U);
+    EXPECT_EQ(entries.front().kind, copyclip::core::ClipKind::RichText);
     EXPECT_EQ(entries.front().html, "<b>hi</b>");
 }
 

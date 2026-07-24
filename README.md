@@ -31,9 +31,9 @@
 
 CopyClip keeps a searchable history of what you copy — plain text, HTML, and images — and brings it back with one keypress. It is a native C++23 app with a GTK4 + libadwaita UI, rewritten from an earlier Python/PyQt6 version.
 
-The reason it exists: the same global hotkey works on X11 and Wayland, with nothing to wire up by hand. The previous version made you bind a custom Wayland shortcut yourself. That step is gone. CopyClip reads the clipboard through the X11/XWayland selection, which the compositor mirrors to and from the Wayland clipboard, and pastes by injecting Ctrl+V through a `/dev/uinput` virtual keyboard — kernel-level, so it reaches terminals and sandboxed apps too.
+The picker is designed for keyboard use: open it, type to search, move with the arrow keys, then copy or paste without reaching for the mouse. Clipboard history stays on your computer; CopyClip sends no install or usage telemetry.
 
-Developed and tested on GNOME (Mutter), X11 and Wayland sessions. It is young software (v0.2.2) — expect rough edges on other desktops, and please file what you hit.
+Linux Mint XFCE/X11 is a first-class target. CopyClip registers its global shortcut directly through Xfconf, while GNOME keeps its existing settings-daemon integration. Wayland support continues through XWayland where available.
 
 ---
 
@@ -45,8 +45,11 @@ Developed and tested on GNOME (Mutter), X11 and Wayland sessions. It is young so
 | 🖼️ **Image thumbnails** | Copied and pasted images render as thumbnails instead of raw byte counts. |
 | 📌 **Pinning** | Pin the clips you reuse so they stay at the top. |
 | 🔍 **Fuzzy search** | Start typing to filter the whole history. |
-| ⌨️ **One hotkey, both servers** | A configurable shortcut (default `Super+C`) toggles the window on X11 and Wayland. |
+| ⌨️ **Keyboard-first picker** | Use arrows, Enter, number shortcuts, Delete, and pin controls without leaving the search field. |
+| 🖥️ **XFCE + GNOME shortcuts** | A configurable shortcut (default `Super+V`) is registered automatically through Xfconf or GNOME Settings. |
 | 📋 **Click to paste** | Click a clip to copy it, and optionally auto-paste it into the window you came from. |
+| 🛡️ **Privacy controls** | Pause recording instantly; password-manager clips carrying the KDE secret hint are ignored. |
+| 🧹 **Paste as plain text** | Strip HTML formatting when pasting a rich-text entry. |
 | 🌗 **Themes** | Dark, light, or follow the system. |
 | 💾 **SQLite storage** | History lives in a WAL-mode SQLite database with de-duplication and a configurable size cap. |
 | 🪶 **Event-driven** | Capture is signal-driven, not polled, so it idles cheaply in the background. |
@@ -61,7 +64,7 @@ Developed and tested on GNOME (Mutter), X11 and Wayland sessions. It is young so
 curl -fsSL https://raw.githubusercontent.com/Walkercito/CopyClip/main/scripts/install.sh | bash
 ```
 
-The script detects your distro and architecture and installs a `.deb` or `.rpm` when it can, falls back to an AppImage, and builds from source if neither fits. It also adds CopyClip to your login autostart.
+The script detects your distro and architecture and installs a `.deb` or `.rpm` when it can, falls back to an AppImage, and builds from source if neither fits. Release downloads are verified against published SHA-256 checksums, and the script adds CopyClip to your login autostart.
 
 To remove it:
 
@@ -99,7 +102,7 @@ The presets are `debug`, `release`, and `asan`.
 
 ## 🔑 Runtime requirements
 
-CopyClip needs GTK4 and libadwaita at runtime; both ship on current GNOME-based distros.
+CopyClip needs GTK4 and libadwaita at runtime. XFCE users do not need to replace their desktop or window manager; the application carries its own GTK UI.
 
 Auto-paste writes to `/dev/uinput`, which on most systems means joining the `input` group:
 
@@ -108,15 +111,15 @@ sudo usermod -aG input $USER
 # log out and back in for the group to take effect
 ```
 
-Without `/dev/uinput` access, paste falls back to `xdotool` on X11, or `wtype`/`ydotool` on Wayland, when one is installed. History capture and click-to-copy work either way; only the automatic paste-back depends on this.
+Without `/dev/uinput` access, paste falls back to `xdotool` on X11, or `wtype`/`ydotool` on Wayland, when one is installed. On Linux Mint XFCE, installing `xdotool` is the simplest fallback. History capture and copy-only actions work either way; only paste-back depends on input injection.
 
 ---
 
 ## 🛠️ Usage
 
-Launch `CopyClip` once and it stays running in the background. Press your hotkey to toggle the window, click a clip to copy it (and paste it back, if auto-paste is on), and hit `Esc` to hide. Type at any time to fuzzy-search.
+Launch `CopyClip` once and it stays running in the background. Press your hotkey to toggle the window, type to fuzzy-search, and use the keyboard or mouse to choose a clip.
 
-Open **Settings** to change the theme, rebind the hotkey, toggle auto-paste and auto-hide-on-copy, and set the maximum history size.
+Open **Settings** to change the theme, rebind the hotkey, pause recording, toggle auto-paste and auto-hide-on-copy, show or hide the panel icon, and set the maximum history size.
 
 To start hidden — for autostart entries — pass `--background`.
 
@@ -124,10 +127,18 @@ To start hidden — for autostart entries — pass `--background`.
 
 | Key | Action |
 |---|---|
-| <kbd>Super</kbd>+<kbd>C</kbd> | Toggle the CopyClip window (default; configurable) |
+| <kbd>Super</kbd>+<kbd>V</kbd> | Toggle the CopyClip window (default; configurable) |
 | <kbd>Click</kbd> | Copy the clip (and auto-paste if enabled) |
 | <kbd>Ctrl</kbd>+<kbd>Click</kbd> | Pin / unpin a clip |
 | Type | Fuzzy-search the history |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | Select the previous / next visible clip |
+| <kbd>Enter</kbd> | Copy the selected clip |
+| <kbd>Alt</kbd>+<kbd>Enter</kbd> | Copy and paste the selected clip |
+| <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> | Paste the selected clip as plain text |
+| <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>9</kbd> | Copy one of the first nine visible clips |
+| <kbd>Ctrl</kbd>+<kbd>P</kbd> | Pin / unpin the selected clip |
+| <kbd>Delete</kbd> | Remove the selected clip |
+| <kbd>Ctrl</kbd>+<kbd>,</kbd> | Open Settings |
 | <kbd>Esc</kbd> | Hide the window |
 
 ---
@@ -139,7 +150,9 @@ CopyClip keeps its state under `~/.local/share/copyclip/`:
 - `settings.json` — preferences
 - `history.db` — the SQLite history database
 
-Keys in `settings.json` include `theme`, `hotkey`, `max_history_items`, `auto_hide_on_copy`, `auto_paste`, and `first_run_completed`. The Settings dialog is the easier way to change most of them.
+New files are created with user-only permissions. Clipboard de-duplication state is kept only in memory, not in a separate plaintext cache.
+
+Keys in `settings.json` include `theme`, `hotkey`, `max_history_items`, `auto_hide_on_copy`, `auto_paste`, `capture_paused`, and `first_run_completed`. The Settings dialog is the easier way to change them.
 
 ---
 

@@ -24,10 +24,9 @@ namespace copyclip::ui {
 
 class GdkClipboardSource final : public core::ClipboardSource {
 public:
-    // `state_file` remembers the last-seen clipboard text across launches so
-    // content already present at startup (which Wayland re-offers on focus) isn't
-    // captured again every time.
-    explicit GdkClipboardSource(std::filesystem::path state_file);
+    // `legacy_state_file` identifies the pre-v0.3 plaintext clipboard cache. It
+    // is removed on construction; dedup state now stays in memory only.
+    explicit GdkClipboardSource(std::filesystem::path legacy_state_file);
     ~GdkClipboardSource() override;
 
     GdkClipboardSource(const GdkClipboardSource&) = delete;
@@ -49,8 +48,8 @@ private:
     void read_rich_text();
     void read_plain_text();
 
-    // Record `text` as the current dedup key and persist it (clearing any image
-    // key): the bookkeeping shared by every plain-text / rich-text capture path.
+    // Record `text` as the current in-memory dedup key (clearing any image key):
+    // the bookkeeping shared by every plain-text / rich-text capture path.
     void remember_text(const std::string& text);
 
     // Drain a clipboard data stream (e.g. text/html) into a string ASYNCHRONOUSLY,
@@ -65,7 +64,6 @@ private:
     void deliver(const core::ClipContent& content);
 
     Glib::RefPtr<Gdk::Clipboard> clipboard_;
-    std::filesystem::path state_file_;
     std::function<void(const core::ClipContent&)> on_change_;
     // The last captured key, so a mere ownership/focus change isn't re-captured.
     // Only one is active at a time (text vs image): capturing one clears the other.

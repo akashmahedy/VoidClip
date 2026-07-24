@@ -7,6 +7,7 @@
 // owns the style manager). libadwaita has no C++ binding, so the dialog and its
 // rows are driven through its C API.
 
+#include "core/HistoryService.hpp"
 #include "core/SettingsService.hpp"
 #include "ui/widgets/ShortcutChooser.hpp"
 
@@ -25,6 +26,7 @@ public:
     using ClosedCallback = std::function<void()>;
 
     SettingsDialog(GtkWidget* parent, core::SettingsService& settings,
+                   core::HistoryService& history,
                    ThemeChangedCallback on_theme_changed,
                    PanelIconChangedCallback on_panel_icon_changed, ClosedCallback on_closed);
     ~SettingsDialog() = default;
@@ -39,6 +41,8 @@ private:
     static void on_shortcut_toggled(GObject* row, GParamSpec* spec, gpointer self);
     static void on_auto_hide_toggled(GObject* row, GParamSpec* spec, gpointer self);
     static void on_auto_paste_toggled(GObject* row, GParamSpec* spec, gpointer self);
+    static void on_capture_paused_toggled(GObject* row, GParamSpec* spec, gpointer self);
+    static void on_history_limit_changed(GObject* row, GParamSpec* spec, gpointer self);
     static void on_panel_icon_toggled(GObject* row, GParamSpec* spec, gpointer self);
     static void on_dialog_closed(AdwDialog* dialog, gpointer self);
 
@@ -47,9 +51,12 @@ private:
     void apply_shortcut_enabled(bool active);
     void apply_auto_hide(bool active);
     void apply_auto_paste(bool active);
+    void apply_capture_paused(bool paused);
+    void apply_history_limit(int max_items);
     void apply_panel_icon(bool active);
 
     std::reference_wrapper<core::SettingsService> settings_;
+    std::reference_wrapper<core::HistoryService> history_;
     ThemeChangedCallback on_theme_changed_;
     PanelIconChangedCallback on_panel_icon_changed_;
     ClosedCallback on_closed_;

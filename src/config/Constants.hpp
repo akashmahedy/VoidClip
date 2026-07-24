@@ -13,12 +13,12 @@ inline constexpr std::string_view kAppName = "CopyClip";
 inline constexpr std::string_view kAppId = "copyclip";
 
 // Version when running from a source tree without installed package metadata.
-inline constexpr std::string_view kAppVersion = "0.0.0";
+inline constexpr std::string_view kAppVersion = "0.3.0";
 
 inline constexpr int kDefaultMaxHistoryItems = 70;
 
-// Default open shortcut as a GNOME accelerator (matches core::kDefaultPreset,
-// Super+V). Stored verbatim in settings and written straight to gsettings.
+// Default open shortcut in GTK accelerator syntax (matches core::kDefaultPreset,
+// Super+V). GNOME and XFCE both accept this representation.
 inline constexpr std::string_view kDefaultHotkeyAccelerator = "<Super>v";
 inline constexpr std::string_view kHistoryDbName = "history.db";
 inline constexpr std::string_view kSettingsFileName = "settings.json";

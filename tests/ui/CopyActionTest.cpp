@@ -71,4 +71,29 @@ TEST(CopyActionTest, HidesWhenAutoPasteEvenWithAutoHideOff) {
     EXPECT_TRUE(harness.action.run(text_clip("x")));
 }
 
+TEST(CopyActionTest, ExplicitCopyOnlyHidesWithoutAutoPaste) {
+    CopyActionHarness harness;
+    harness.set(false, false);
+
+    EXPECT_TRUE(
+        harness.action.run(text_clip("x"), copyclip::ui::CopyMode::CopyOnly));
+    EXPECT_EQ(harness.clipboard.text, "x");
+}
+
+TEST(CopyActionTest, PlainTextModeDropsRichFormatting) {
+    CopyActionHarness harness;
+    const copyclip::core::ClipContent rich{.kind = copyclip::core::ClipKind::RichText,
+                                           .text = "hello",
+                                           .html = "<b>hello</b>"};
+
+    EXPECT_TRUE(harness.action.run(rich, copyclip::ui::CopyMode::PastePlainText));
+    EXPECT_EQ(harness.clipboard.written.kind, copyclip::core::ClipKind::Text);
+    EXPECT_EQ(harness.clipboard.written.text, "hello");
+    EXPECT_TRUE(harness.clipboard.written.html.empty());
+    const auto entries = harness.history.entries();
+    ASSERT_EQ(entries.size(), 1U);
+    EXPECT_EQ(entries.front().kind, copyclip::core::ClipKind::RichText);
+    EXPECT_EQ(entries.front().html, "<b>hello</b>");
+}
+
 } // namespace

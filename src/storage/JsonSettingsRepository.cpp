@@ -29,11 +29,25 @@ constexpr const char* kKeyFirstRunCompleted = "first_run_completed";
 constexpr const char* kKeyMaxHistoryItems = "max_history_items";
 constexpr const char* kKeyAutoHideOnCopy = "auto_hide_on_copy";
 constexpr const char* kKeyAutoPaste = "auto_paste";
+constexpr const char* kKeyCapturePaused = "capture_paused";
 constexpr const char* kKeyShowPanelIcon = "show_panel_icon";
 
 // Indentation width for the serialized JSON, mirroring the reference's
 // json.dumps(..., indent=2).
 constexpr int kJsonIndent = 2;
+constexpr std::filesystem::perms kPrivateDirectoryPermissions =
+    std::filesystem::perms::owner_all;
+constexpr std::filesystem::perms kPrivateFilePermissions =
+    std::filesystem::perms::owner_read | std::filesystem::perms::owner_write;
+
+void set_private_permissions(const std::filesystem::path& path,
+                             std::filesystem::perms permissions) {
+    std::error_code error;
+    std::filesystem::permissions(path, permissions, std::filesystem::perm_options::replace, error);
+    if (error) {
+        spdlog::warn("could not restrict permissions on {}: {}", path.string(), error.message());
+    }
+}
 
 // Reads the whole file into a string; std::nullopt if it cannot be opened or a
 // read error occurs, so the caller falls back to defaults rather than acting on
@@ -74,6 +88,7 @@ constexpr int kJsonIndent = 2;
         .max_history_items = json.value(kKeyMaxHistoryItems, defaults.max_history_items),
         .auto_hide_on_copy = json.value(kKeyAutoHideOnCopy, defaults.auto_hide_on_copy),
         .auto_paste = json.value(kKeyAutoPaste, defaults.auto_paste),
+        .capture_paused = json.value(kKeyCapturePaused, defaults.capture_paused),
         .show_panel_icon = json.value(kKeyShowPanelIcon, defaults.show_panel_icon)};
 }
 
@@ -111,6 +126,7 @@ void JsonSettingsRepository::save(const core::Settings& settings) {
     const std::filesystem::path parent = path_.parent_path();
     if (!parent.empty()) {
         std::filesystem::create_directories(parent);
+        set_private_permissions(parent, kPrivateDirectoryPermissions);
     }
 
     const nlohmann::json json = {{kKeyTheme, core::to_string(settings.theme)},
@@ -119,6 +135,7 @@ void JsonSettingsRepository::save(const core::Settings& settings) {
                                  {kKeyMaxHistoryItems, settings.max_history_items},
                                  {kKeyAutoHideOnCopy, settings.auto_hide_on_copy},
                                  {kKeyAutoPaste, settings.auto_paste},
+                                 {kKeyCapturePaused, settings.capture_paused},
                                  {kKeyShowPanelIcon, settings.show_panel_icon}};
 
     std::filesystem::path temp_path = path_;
@@ -128,6 +145,7 @@ void JsonSettingsRepository::save(const core::Settings& settings) {
         std::ofstream stream{temp_path, std::ios::binary | std::ios::trunc};
         stream << json.dump(kJsonIndent);
     }
+    set_private_permissions(temp_path, kPrivateFilePermissions);
 
     std::filesystem::rename(temp_path, path_);
 }

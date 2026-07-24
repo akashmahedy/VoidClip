@@ -16,7 +16,7 @@ namespace copyclip::ui {
 
 class ShortcutChooser {
 public:
-    // Called with the new GNOME accelerator (e.g. "<Super>v") whenever it changes.
+    // Called with the new GTK accelerator (e.g. "<Super>v") whenever it changes.
     using AcceleratorCallback = std::function<void(const std::string&)>;
 
     // Builds the combo row into `group`; `parent` is the widget capture sheets are

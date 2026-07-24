@@ -15,8 +15,8 @@ endif()
 
 project(
   copyclip_engine
-  VERSION 0.1.0
-  DESCRIPTION "Native C++23 port of the CopyClip clipboard engine (headless, no UI)."
+  VERSION 0.3.0
+  DESCRIPTION "Keyboard-first clipboard history manager for Linux."
   LANGUAGES CXX)
 
 # --- Language standard (non-negotiable: C++23, no extensions) -----------------
