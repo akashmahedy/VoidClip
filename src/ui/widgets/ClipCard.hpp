@@ -18,13 +18,14 @@
 #include <glibmm/refptr.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
 
 namespace voidclip::ui {
 
-enum class ClipAction {
+enum class ClipAction : std::uint8_t {
     FollowSettings,
     Copy,
     Paste,

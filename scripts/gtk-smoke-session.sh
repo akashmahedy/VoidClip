@@ -26,10 +26,10 @@ done
   exit 1
 }
 for _ in $(seq 1 50); do
-  xdotool getwindowmapstate "${window}" 2>/dev/null | grep -q IsViewable && break
+  xwininfo -id "${window}" 2>/dev/null | grep -q 'Map State: IsViewable' && break
   sleep 0.1
 done
-xdotool getwindowmapstate "${window}" | grep -q IsViewable || {
+xwininfo -id "${window}" | grep -q 'Map State: IsViewable' || {
   echo "FAIL: VoidClip window was created but never became visible"
   cat "${log}"
   exit 1

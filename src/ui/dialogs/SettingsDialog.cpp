@@ -74,12 +74,12 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
                                PanelIconChangedCallback on_panel_icon_changed,
                                ClosedCallback on_closed)
     : settings_{settings}, history_{history}, on_theme_changed_{std::move(on_theme_changed)},
-      on_panel_icon_changed_{std::move(on_panel_icon_changed)}, on_closed_{std::move(on_closed)} {
+      on_panel_icon_changed_{std::move(on_panel_icon_changed)}, on_closed_{std::move(on_closed)},
+      dialog_{adw_dialog_new()} {
     const core::Settings& current = settings.settings();
 
     // A plain AdwDialog (not AdwPreferencesDialog) so it presents as a bottom sheet
     // like the welcome dialog, instead of floating centered.
-    dialog_ = adw_dialog_new();
     adw_dialog_set_title(dialog_, "Settings");
     adw_dialog_set_content_width(dialog_, kDialogContentWidth);
     adw_dialog_set_presentation_mode(dialog_, ADW_DIALOG_BOTTOM_SHEET);
