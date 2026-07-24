@@ -47,7 +47,7 @@ Linux Mint 22 XFCE/X11 is a first-class target. VoidClip registers its global sh
 
 For Linux Mint 22 on a typical Intel/AMD computer:
 
-1. [Download the VoidClip `.deb`](https://github.com/akashmahedy/VoidClip/releases/latest/download/voidclip_0.3.2_amd64.deb).
+1. [Download the VoidClip `.deb`](https://github.com/akashmahedy/VoidClip/releases/latest/download/voidclip_0.3.3_amd64.deb).
 2. Double-click the downloaded file.
 3. Select **Install Package**, then open **VoidClip** from the applications menu.
 
@@ -114,7 +114,11 @@ sudo usermod -aG input $USER
 # log out and back in for the group to take effect
 ```
 
-Without `/dev/uinput` access, paste falls back to `xdotool` on X11, or `wtype`/`ydotool` on Wayland, when one is installed. On Linux Mint XFCE, installing `xdotool` is the simplest fallback. History capture and copy-only actions work either way; only paste-back depends on input injection.
+Without `/dev/uinput` access, paste falls back to `xdotool` on X11, or
+`wtype`/`ydotool` on Wayland. The Linux Mint `.deb` installs `xdotool`
+automatically, so click-to-paste works after a normal package installation.
+History capture and copy-only actions work either way; only paste-back depends on
+input injection.
 
 If every paste method fails, VoidClip reopens with a clear message. The selected clip remains on the clipboard, ready for a manual <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
@@ -128,6 +132,11 @@ Open **Settings** to change the theme, rebind the hotkey, pause recording, toggl
 auto-paste and auto-hide-on-copy, choose whether password-manager clips are saved,
 control sign-in startup and the panel icon, check for updates, and set the maximum
 history size.
+
+Opening **Settings** checks the latest stable GitHub release. For an existing DEB
+installation, **Update now** downloads the matching package, verifies its published
+SHA-256 checksum, and installs it after one system authentication prompt. AppImage
+and RPM installs keep a safe link to the release page instead.
 
 Every history card has visible **Copy**, **Paste**, **Plain text**, **Pin/Unpin**,
 and delete controls. A deleted clip can be restored immediately with **Undo**.

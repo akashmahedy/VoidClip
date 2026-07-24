@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "voidclip-engine",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Keyboard-first clipboard history manager for Linux.",
   "license": "MIT",
   "homepage": "https://github.com/akashmahedy/VoidClip",

@@ -53,12 +53,13 @@ set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/scripts/post
 set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postrm")
 
 # .deb: let dpkg-shlibdeps compute the exact shared-library dependencies from the
-# binary; recommend the gsettings CLI (the global shortcut) and an input tool
-# (auto-paste), which the app degrades gracefully without.
+# binary. xdotool is required because click-to-paste is a default Mint/X11 action;
+# curl and pkexec support the verified one-click updater.
 set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "libglib2.0-bin, xfconf, xdotool")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "xdotool, curl, pkexec")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "libglib2.0-bin, xfconf")
 set(CPACK_DEBIAN_PACKAGE_SUGGESTS "wtype, ydotool")
 set(CPACK_DEBIAN_PACKAGE_CONFLICTS "copyclip")
 set(CPACK_DEBIAN_PACKAGE_REPLACES "copyclip")
