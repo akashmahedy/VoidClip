@@ -25,6 +25,8 @@ done
   cat "${log}"
   exit 1
 }
+xdotool windowfocus --sync "${window}"
+sleep 0.1
 
 printf 'packaged GTK clipboard smoke' | xclip -selection clipboard
 for _ in $(seq 1 50); do
@@ -39,12 +41,12 @@ done
 
 # SearchEntry has focus when the window opens. Plain Delete edits search text and
 # must never remove the selected history item.
-xdotool key --window "${window}" Delete
+xdotool key --clearmodifiers Delete
 sleep 0.2
 [ "$(sqlite3 "${database}" "SELECT COUNT(*) FROM entries;")" = 1 ] ||
   { echo "FAIL: plain Delete removed a clip"; exit 1; }
 
-xdotool key --window "${window}" alt+Delete
+xdotool key --clearmodifiers alt+Delete
 for _ in $(seq 1 30); do
   [ "$(sqlite3 "${database}" "SELECT COUNT(*) FROM entries;")" = 0 ] && break
   sleep 0.1
