@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -141,4 +141,4 @@ Preview make_preview(std::string_view content, std::size_t max_code_points) {
     return {std::move(text), length_truncated || has_structure};
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

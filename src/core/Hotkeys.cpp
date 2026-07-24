@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 namespace {
 
@@ -41,7 +41,7 @@ HotkeySpec get_spec(HotkeyPreset preset) {
         std::find_if(presets.begin(), presets.end(),
                      [preset](const auto& entry) { return entry.first == preset; });
     if (found == presets.end()) {
-        throw std::out_of_range("copyclip::core::get_spec: unknown HotkeyPreset value " +
+        throw std::out_of_range("voidclip::core::get_spec: unknown HotkeyPreset value " +
                                 std::string{to_string(preset)});
     }
     return found->second;
@@ -76,4 +76,4 @@ std::string accelerator_from_stored(std::string_view stored) {
     return std::string{stored};
 }
 
-} // namespace copyclip::core
+} // namespace voidclip::core

@@ -1,6 +1,6 @@
-# Contributing to CopyClip
+# Contributing to VoidClip
 
-Thanks for taking the time. CopyClip is a clipboard history manager for Linux,
+Thanks for taking the time. VoidClip is a clipboard history manager for Linux,
 written in C++23 with a GTK4 + libadwaita UI. Bug reports, fixes, docs, and
 features are all welcome.
 
@@ -8,7 +8,7 @@ By participating you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Ways to contribute
 
-- **Report a bug.** Open an issue. Include your distro, the CopyClip version
+- **Report a bug.** Open an issue. Include your distro, the VoidClip version
   (the release tag you installed), and whether you're on an X11 or a Wayland session —
   clipboard behavior differs between them and that detail saves a round trip.
 - **Request a feature.** Open an issue describing the use case, not just the
@@ -94,29 +94,29 @@ shared `CMakePresets.json` and `vcpkg.json` are checked in.
 After a build, the binary lands under `build/<preset>/`. Launch it directly:
 
 ```sh
-./build/debug/src/ui/copyclip-gtk
+./build/debug/src/ui/voidclip-gtk
 ```
 
-CopyClip runs in the background and shows its window when you press the hotkey
+VoidClip runs in the background and shows its window when you press the hotkey
 (default `Super+V`). A couple of runtime notes:
 
 - **Auto-paste needs `/dev/uinput`.** It injects Ctrl+V through a virtual
   keyboard, which requires write access to `/dev/uinput`. Add yourself to the
   `input` group and re-login: `sudo usermod -aG input $USER`. Without it,
-  CopyClip falls back to `xdotool` (X11) or `wtype`/`ydotool` (Wayland) when
+  VoidClip falls back to `xdotool` (X11) or `wtype`/`ydotool` (Wayland) when
   they're installed.
-- **Wayland rides XWayland.** When a `DISPLAY` is set, CopyClip forces
+- **Wayland rides XWayland.** When a `DISPLAY` is set, VoidClip forces
   `GDK_BACKEND=x11` so it reads the X11 selection, which the compositor mirrors
   to and from the Wayland clipboard. This is the only focus-free way to capture
   in the background under GNOME's Mutter.
-- **XFCE shortcuts use Xfconf.** In an XFCE session, CopyClip registers the
+- **XFCE shortcuts use Xfconf.** In an XFCE session, VoidClip registers the
   application shortcut through `xfconf-query` and refuses to replace a shortcut
   already owned by another command.
-- **Running alongside an installed copy.** Set `COPYCLIP_STANDALONE=1` in the environment
+- **Running alongside an installed copy.** Set `VOIDCLIP_STANDALONE=1` in the environment
   to run your dev build next to an installed instance without the two fighting
   over the same socket and storage.
 
-Settings and history live in `~/.local/share/copyclip/`
+Settings and history live in `~/.local/share/voidclip/`
 (`settings.json` and `history.db`).
 
 ## Tests
@@ -203,5 +203,5 @@ before disclosure.
 
 ## License
 
-CopyClip is MIT-licensed (© 2024 Walkercito). By contributing, you agree your
+VoidClip is MIT-licensed (© 2024 Walkercito). By contributing, you agree your
 contributions are licensed under the same terms.

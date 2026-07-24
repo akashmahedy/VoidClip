@@ -6,12 +6,13 @@
 
 #include <spdlog/spdlog.h>
 
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -110,4 +111,20 @@ bool is_xfce_shortcut_registered(const XfceShortcutBinding& binding) {
     return read_binding(property, current) && current == binding.command;
 }
 
-} // namespace copyclip::ui
+bool migrate_legacy_xfce_shortcut(const XfceShortcutBinding& binding) {
+    const std::string property = property_for(binding.accelerator);
+    if (binding.command.empty() || property.empty() || !xfce_shortcuts_available()) {
+        return false;
+    }
+    std::string current;
+    if (!read_binding(property, current)) {
+        return false;
+    }
+    const std::filesystem::path executable{current};
+    if (executable.filename() != "copyclip") {
+        return false;
+    }
+    return run_xfconf({"-c", kChannel, "-p", property, "-s", std::string{binding.command}});
+}
+
+} // namespace voidclip::ui

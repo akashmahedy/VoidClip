@@ -6,7 +6,7 @@
 
 #include <chrono>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 class SystemClock final : public Clock {
 public:
@@ -15,4 +15,4 @@ public:
     }
 };
 
-} // namespace copyclip::core
+} // namespace voidclip::core

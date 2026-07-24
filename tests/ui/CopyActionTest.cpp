@@ -12,19 +12,23 @@
 
 namespace {
 
-using copyclip::core::HistoryService;
-using copyclip::core::Settings;
-using copyclip::core::SettingsService;
-using copyclip::testing::FakeClipboardSource;
-using copyclip::testing::FakeClock;
-using copyclip::testing::InMemoryHistoryRepository;
-using copyclip::testing::InMemorySettingsRepository;
-using copyclip::testing::text_clip;
+using voidclip::core::HistoryService;
+using voidclip::core::Settings;
+using voidclip::core::SettingsService;
+using voidclip::testing::FakeClipboardSource;
+using voidclip::testing::FakeClock;
+using voidclip::testing::InMemoryHistoryRepository;
+using voidclip::testing::InMemorySettingsRepository;
+using voidclip::testing::text_clip;
 
 // Records paste() calls without spawning any input tool.
-struct FakePaster final : public copyclip::ui::Paster {
-    void paste() const override { ++pastes; }
+struct FakePaster final : public voidclip::ui::Paster {
+    void paste(FinishedCallback on_finished) const override {
+        ++pastes;
+        on_finished(succeeds);
+    }
     mutable int pastes = 0;
+    bool succeeds = true;
 };
 
 // Wires CopyAction to in-memory fakes; tweak behaviour via set().
@@ -36,7 +40,7 @@ struct CopyActionHarness {
     InMemorySettingsRepository settings_repo;
     SettingsService settings{settings_repo};
     FakePaster paster;
-    copyclip::ui::CopyAction action{clipboard, history, settings, paster};
+    voidclip::ui::CopyAction action{clipboard, history, settings, paster};
 
     void set(bool auto_hide, bool auto_paste) {
         Settings updated = settings.settings();
@@ -75,22 +79,22 @@ TEST(CopyActionTest, ExplicitCopyOnlyHidesWithoutAutoPaste) {
     CopyActionHarness harness;
     harness.set(false, false);
 
-    EXPECT_TRUE(harness.action.run(text_clip("x"), copyclip::ui::CopyMode::CopyOnly));
+    EXPECT_TRUE(harness.action.run(text_clip("x"), voidclip::ui::CopyMode::CopyOnly));
     EXPECT_EQ(harness.clipboard.text, "x");
 }
 
 TEST(CopyActionTest, PlainTextModeDropsRichFormatting) {
     CopyActionHarness harness;
-    const copyclip::core::ClipContent rich{
-        .kind = copyclip::core::ClipKind::RichText, .text = "hello", .html = "<b>hello</b>"};
+    const voidclip::core::ClipContent rich{
+        .kind = voidclip::core::ClipKind::RichText, .text = "hello", .html = "<b>hello</b>"};
 
-    EXPECT_TRUE(harness.action.run(rich, copyclip::ui::CopyMode::PastePlainText));
-    EXPECT_EQ(harness.clipboard.written.kind, copyclip::core::ClipKind::Text);
+    EXPECT_TRUE(harness.action.run(rich, voidclip::ui::CopyMode::PastePlainText));
+    EXPECT_EQ(harness.clipboard.written.kind, voidclip::core::ClipKind::Text);
     EXPECT_EQ(harness.clipboard.written.text, "hello");
     EXPECT_TRUE(harness.clipboard.written.html.empty());
     const auto entries = harness.history.entries();
     ASSERT_EQ(entries.size(), 1U);
-    EXPECT_EQ(entries.front().kind, copyclip::core::ClipKind::RichText);
+    EXPECT_EQ(entries.front().kind, voidclip::core::ClipKind::RichText);
     EXPECT_EQ(entries.front().html, "<b>hello</b>");
 }
 

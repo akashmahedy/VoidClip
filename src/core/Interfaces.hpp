@@ -1,7 +1,7 @@
 #pragma once
 
 // Abstract seams for the engine's collaborators. Mirrors
-// copyclip/core/interfaces.py (@runtime_checkable Protocols) as pure abstract
+// voidclip/core/interfaces.py (@runtime_checkable Protocols) as pure abstract
 // base classes (I.25): production adapters and in-memory test fakes both derive
 // from these, and core/ depends on the abstractions, not the concretions.
 //
@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 // A source of "now", injected so tests can supply a deterministic clock.
 class Clock {
@@ -107,4 +107,4 @@ public:
     virtual void save(const Settings& settings) = 0;
 };
 
-} // namespace copyclip::core
+} // namespace voidclip::core

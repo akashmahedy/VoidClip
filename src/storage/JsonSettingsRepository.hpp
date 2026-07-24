@@ -1,7 +1,7 @@
 #pragma once
 
 // JSON-backed core::SettingsRepository, mirroring the reference module
-// copyclip/storage/json_settings.py. load() degrades to defaults whenever the
+// voidclip/storage/json_settings.py. load() degrades to defaults whenever the
 // file is absent, unreadable, unparseable, or malformed (never throws); save()
 // writes atomically (temp file + rename) so a reader never sees a half-written
 // file. nlohmann-json is confined to the .cpp so it never leaks through this
@@ -12,7 +12,7 @@
 
 #include <filesystem>
 
-namespace copyclip::storage {
+namespace voidclip::storage {
 
 class JsonSettingsRepository final : public core::SettingsRepository {
 public:
@@ -28,4 +28,4 @@ private:
     std::filesystem::path path_;
 };
 
-} // namespace copyclip::storage
+} // namespace voidclip::storage

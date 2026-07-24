@@ -14,8 +14,8 @@ if(NOT DEFINED ENV{VCPKG_ROOT})
 endif()
 
 project(
-  copyclip_engine
-  VERSION 0.3.0
+  voidclip_engine
+  VERSION 0.3.1
   DESCRIPTION "Keyboard-first clipboard history manager for Linux."
   LANGUAGES CXX)
 
@@ -31,11 +31,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # An INTERFACE target carrying the project's static type/safety flags. Every
 # target links it PRIVATEly so the flags never leak to consumers. This keeps the
 # build target-based with no global flag pollution.
-add_library(copyclip_warnings INTERFACE)
-add_library(copyclip::warnings ALIAS copyclip_warnings)
+add_library(voidclip_warnings INTERFACE)
+add_library(voidclip::warnings ALIAS voidclip_warnings)
 
 target_compile_options(
-  copyclip_warnings
+  voidclip_warnings
   INTERFACE -Wall
             -Wextra
             -Wpedantic
@@ -46,19 +46,19 @@ target_compile_options(
 # --- Sanitizer gate -----------------------------------------------------------
 # An INTERFACE target carrying ASan+UBSan+LSan (LSan ships with ASan on Linux).
 # Targets link it PRIVATEly so sanitization is opt-in per project target and
-# never leaks onto third-party/vcpkg targets. When COPYCLIP_SANITIZE is OFF the
+# never leaks onto third-party/vcpkg targets. When VOIDCLIP_SANITIZE is OFF the
 # target carries no flags and is a harmless no-op, so call sites link it
 # unconditionally. The asan preset turns the option ON.
-option(COPYCLIP_SANITIZE "Build with ASan+UBSan+LSan" OFF)
+option(VOIDCLIP_SANITIZE "Build with ASan+UBSan+LSan" OFF)
 
-add_library(copyclip_sanitizers INTERFACE)
-add_library(copyclip::sanitizers ALIAS copyclip_sanitizers)
+add_library(voidclip_sanitizers INTERFACE)
+add_library(voidclip::sanitizers ALIAS voidclip_sanitizers)
 
-if(COPYCLIP_SANITIZE)
+if(VOIDCLIP_SANITIZE)
   target_compile_options(
-    copyclip_sanitizers INTERFACE -fsanitize=address,undefined
+    voidclip_sanitizers INTERFACE -fsanitize=address,undefined
                                   -fno-omit-frame-pointer)
-  target_link_options(copyclip_sanitizers INTERFACE
+  target_link_options(voidclip_sanitizers INTERFACE
                       -fsanitize=address,undefined -fno-omit-frame-pointer)
 endif()
 
@@ -68,12 +68,12 @@ add_subdirectory(src)
 
 # --- Packaging ----------------------------------------------------------------
 # Install rules + CPack config (.deb/.rpm/.tar.gz). Added after src so the
-# copyclip-gtk target exists when packaging installs it.
+# voidclip-gtk target exists when packaging installs it.
 add_subdirectory(packaging)
 
 # --- Tests --------------------------------------------------------------------
 # GoogleTest + CTest. Enabled unconditionally: the quality gate runs ctest on
-# every preset. tests/ provides a copyclip_add_test() helper and one target per
+# every preset. tests/ provides a voidclip_add_test() helper and one target per
 # unit under test.
 enable_testing()
 add_subdirectory(tests)

@@ -1,12 +1,12 @@
-# copyclip_core: pure domain + application logic.
+# voidclip_core: pure domain + application logic.
 #
 # Dependency rule (CLAUDE.md): this target must link NO Qt, Xlib, or D-Bus,
 # ever. Sources are pure C++ that read only the process environment.
-add_library(copyclip_core STATIC Platform.cpp Hotkeys.cpp HistoryService.cpp
+add_library(voidclip_core STATIC Platform.cpp Hotkeys.cpp HistoryService.cpp
                                  SettingsService.cpp ClipboardEngine.cpp Hash.cpp)
-add_library(copyclip::core ALIAS copyclip_core)
+add_library(voidclip::core ALIAS voidclip_core)
 
-target_include_directories(copyclip_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_include_directories(voidclip_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # spdlog provides engine diagnostics (CLAUDE.md mandates a logging library, never
 # cout/printf). It is a pure logging dependency — not Qt, Xlib, or D-Bus — so the
@@ -14,5 +14,5 @@ target_include_directories(copyclip_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 # the public core headers.
 find_package(spdlog CONFIG REQUIRED)
 
-target_link_libraries(copyclip_core PRIVATE copyclip::warnings copyclip::sanitizers
+target_link_libraries(voidclip_core PRIVATE voidclip::warnings voidclip::sanitizers
                                             spdlog::spdlog)

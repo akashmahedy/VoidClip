@@ -16,8 +16,8 @@
 
 namespace {
 
-namespace core = copyclip::core;
-using copyclip::test::ScopedEnv;
+namespace core = voidclip::core;
+using voidclip::test::ScopedEnv;
 
 // Desired state of the three session-detection variables: a value sets the
 // variable, std::nullopt unsets it. Designated initializers name each at the call

@@ -29,7 +29,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -333,4 +333,4 @@ void GdkClipboardSource::deliver(const core::ClipContent& content) {
     }
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

@@ -13,11 +13,13 @@
 
 #include <sigc++/connection.h>
 
+#include <atomic>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 // Explicit keyboard actions can override the persistent auto-paste preference.
 // FollowSettings preserves click behavior; the other modes always close the
@@ -31,8 +33,11 @@ enum class CopyMode : std::uint8_t {
 
 class CopyAction {
 public:
+    using PasteFinishedCallback = std::function<void(bool)>;
+
     CopyAction(core::ClipboardSource& clipboard, core::HistoryService& history,
-               core::SettingsService& settings, Paster& paster);
+               core::SettingsService& settings, Paster& paster,
+               PasteFinishedCallback on_paste_finished = {});
     ~CopyAction();
 
     CopyAction(const CopyAction&) = delete;
@@ -43,13 +48,21 @@ public:
     // Copy `content`; returns whether the caller should hide the window afterwards.
     [[nodiscard]] bool run(const core::ClipContent& content,
                            CopyMode mode = CopyMode::FollowSettings);
+    // Disable pending/in-flight callbacks before the owning window is destroyed.
+    void cancel_pending();
 
 private:
+    struct PasteCompletionState {
+        std::atomic_bool alive{true};
+        PasteFinishedCallback callback;
+    };
+
     std::reference_wrapper<core::ClipboardSource> clipboard_;
     std::reference_wrapper<core::HistoryService> history_;
     std::reference_wrapper<core::SettingsService> settings_;
     std::reference_wrapper<Paster> paster_;
+    std::shared_ptr<PasteCompletionState> paste_state_;
     sigc::connection paste_connection_;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

@@ -5,7 +5,7 @@
 
 #include "core/Enums.hpp"
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 // Detect the active display-server session. Resolution order (per the reference):
 //   1. XDG_SESSION_TYPE, ASCII-lowercased: only "x11"/"wayland" match; any other
@@ -15,4 +15,4 @@ namespace copyclip::core {
 //   4. Otherwise -> Unknown.
 [[nodiscard]] SessionType detect_session();
 
-} // namespace copyclip::core
+} // namespace voidclip::core

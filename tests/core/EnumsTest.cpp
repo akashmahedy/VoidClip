@@ -15,7 +15,7 @@
 
 namespace {
 
-namespace core = copyclip::core;
+namespace core = voidclip::core;
 
 // DRY round-trip check covering all five enums: to_string reproduces the value
 // and from_string recovers the enumerator. `parse` is the per-enum from_string,

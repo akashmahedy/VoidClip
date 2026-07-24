@@ -9,12 +9,13 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <string>
 #include <system_error>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -22,14 +23,16 @@ constexpr const char* kMediaKeysSchema = "org.gnome.settings-daemon.plugins.medi
 constexpr const char* kCustomKeybindingSchema =
     "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding";
 constexpr const char* kKeybindingPath =
+    "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/voidclip/";
+constexpr const char* kLegacyKeybindingPath =
     "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/copyclip/";
-constexpr const char* kShortcutName = "CopyClip";
+constexpr const char* kShortcutName = "VoidClip";
 
 [[nodiscard]] bool gsettings_available() {
     return !Glib::find_program_in_path("gsettings").empty();
 }
 
-// Wrap a value as a GVariant string literal (CopyClip -> 'CopyClip'). Commands
+// Wrap a value as a GVariant string literal (VoidClip -> 'VoidClip'). Commands
 // and accelerators never contain a single quote.
 [[nodiscard]] std::string as_gvariant_string(const std::string& value) {
     return "'" + value + "'";
@@ -77,6 +80,15 @@ bool set_custom_keybinding_paths(const std::vector<std::string>& paths) {
 } // namespace
 
 std::string executable_path() {
+    // AppImage mounts itself under /tmp/.mount_*; /proc/self/exe therefore
+    // points at an ephemeral path. APPIMAGE is the launcher-provided absolute
+    // path to the original file and survives reboots.
+    if (const char* appimage = std::getenv("APPIMAGE"); appimage != nullptr && *appimage != '\0') {
+        const std::filesystem::path original{appimage};
+        if (original.is_absolute()) {
+            return original.string();
+        }
+    }
     std::error_code error;
     const std::filesystem::path exe = std::filesystem::read_symlink("/proc/self/exe", error);
     return error ? std::string{} : exe.string();
@@ -129,4 +141,22 @@ bool is_gnome_shortcut_registered() {
     return std::find(paths.begin(), paths.end(), kKeybindingPath) != paths.end();
 }
 
-} // namespace copyclip::ui
+bool migrate_legacy_gnome_shortcut(const std::string& command, const std::string& accelerator) {
+    if (!gsettings_available()) {
+        return false;
+    }
+    const std::vector<std::string> before = custom_keybinding_paths();
+    if (std::find(before.begin(), before.end(), kLegacyKeybindingPath) == before.end()) {
+        return false;
+    }
+    // Create and verify the new binding before removing the old path, so a failed
+    // migration never leaves the user without their existing shortcut.
+    if (!register_gnome_shortcut(command, accelerator)) {
+        return false;
+    }
+    std::vector<std::string> after = custom_keybinding_paths();
+    std::erase(after, kLegacyKeybindingPath);
+    return set_custom_keybinding_paths(after);
+}
+
+} // namespace voidclip::ui

@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 // Pure desktop-name classifier used by environment detection and unit tests.
 [[nodiscard]] bool desktop_is_xfce(std::string_view desktop);
@@ -21,5 +21,7 @@ namespace copyclip::ui {
                                            const std::string& new_accelerator);
 [[nodiscard]] bool is_desktop_shortcut_registered(const std::string& command,
                                                   const std::string& accelerator);
+[[nodiscard]] bool migrate_legacy_desktop_shortcut(const std::string& command,
+                                                   const std::string& accelerator);
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

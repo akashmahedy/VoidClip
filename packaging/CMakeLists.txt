@@ -1,45 +1,50 @@
 # Packaging: install the GTK app + desktop entry + icon, and configure CPack to
 # build lightweight .deb / .rpm / .tar.gz that carry only the runtime files
 # (stripped binary, no headers, tests, or debug symbols). Runs after src/ so the
-# copyclip-gtk target already exists.
+# voidclip-gtk target already exists.
 
 include(GNUInstallDirs)
 
-# The product binary ships as "copyclip" (the GTK app is the shipped app); the
-# build output keeps its copyclip-gtk name so existing scripts/CI are unaffected.
+# The product binary ships as "voidclip" (the GTK app is the shipped app); the
+# build output keeps its voidclip-gtk name so existing scripts/CI are unaffected.
 install(
-  PROGRAMS "$<TARGET_FILE:copyclip-gtk>"
+  PROGRAMS "$<TARGET_FILE:voidclip-gtk>"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  RENAME copyclip)
+  RENAME voidclip)
 
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/dev.walkercito.CopyClip.desktop"
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/io.github.akashmahedy.VoidClip.desktop"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
 
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/icons/dev.walkercito.CopyClip.svg"
+# A system XDG autostart entry makes direct DEB/RPM installs behave like the
+# installer-script path. A same-named per-user entry can still override it.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/io.github.akashmahedy.VoidClip-autostart.desktop"
+        DESTINATION "../etc/xdg/autostart")
+
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/icons/io.github.akashmahedy.VoidClip.svg"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps")
 
 # Monochrome panel/tray icon (recoloured by the shell).
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/icons/dev.walkercito.CopyClip-symbolic.svg"
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/icons/io.github.akashmahedy.VoidClip-symbolic.svg"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/symbolic/apps")
 
 # --- CPack --------------------------------------------------------------------
 # Version defaults to the project version; the release CI overrides it from the
-# git tag with -DCOPYCLIP_VERSION=<x.y.z>.
-set(COPYCLIP_VERSION "${PROJECT_VERSION}" CACHE STRING "Release version for packages")
+# git tag with -DVOIDCLIP_VERSION=<x.y.z>.
+set(VOIDCLIP_VERSION "${PROJECT_VERSION}" CACHE STRING "Release version for packages")
 
-set(CPACK_PACKAGE_NAME "copyclip")
-set(CPACK_PACKAGE_VERSION "${COPYCLIP_VERSION}")
-set(CPACK_PACKAGE_VENDOR "Walkercito")
+set(CPACK_PACKAGE_NAME "voidclip")
+set(CPACK_PACKAGE_VERSION "${VOIDCLIP_VERSION}")
+set(CPACK_PACKAGE_VENDOR "VoidClip contributors")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Clipboard history manager for Linux (GTK4/libadwaita)")
-set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/Walkercito/CopyClip")
-set(CPACK_PACKAGE_CONTACT "Walkercito <walkercitoliver@gmail.com>")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/akashmahedy/VoidClip")
+set(CPACK_PACKAGE_CONTACT "akashmahedy <akashmahedy@users.noreply.github.com>")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 set(CPACK_STRIP_FILES ON)
 set(CPACK_PACKAGE_RELOCATABLE OFF)
 
 # Base name used by the archive generators; .deb/.rpm override it below with their
-# own conventions (copyclip-<ver>-<arch>.tar.gz).
-set(CPACK_PACKAGE_FILE_NAME "copyclip-${COPYCLIP_VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
+# own conventions (voidclip-<ver>-<arch>.tar.gz).
+set(CPACK_PACKAGE_FILE_NAME "voidclip-${VOIDCLIP_VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
 
 # Refresh the desktop and icon caches so the app appears in the menu immediately.
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
@@ -55,6 +60,8 @@ set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "libglib2.0-bin, xfconf")
 set(CPACK_DEBIAN_PACKAGE_SUGGESTS "wtype, ydotool, xdotool")
+set(CPACK_DEBIAN_PACKAGE_CONFLICTS "copyclip")
+set(CPACK_DEBIAN_PACKAGE_REPLACES "copyclip")
 
 # .rpm: let rpmbuild auto-require the shared libraries.
 set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
@@ -62,5 +69,7 @@ set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Productivity")
 set(CPACK_RPM_PACKAGE_AUTOREQ ON)
 set(CPACK_RPM_PACKAGE_SUGGESTS "xfconf, wtype")
+set(CPACK_RPM_PACKAGE_CONFLICTS "copyclip")
+set(CPACK_RPM_PACKAGE_OBSOLETES "copyclip")
 
 include(CPack)

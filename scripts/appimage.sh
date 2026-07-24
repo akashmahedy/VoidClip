@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a self-contained AppImage of the CopyClip GTK app from an already-built
+# Build a self-contained AppImage of the VoidClip GTK app from an already-built
 # release tree, bundling the GTK4/libadwaita runtime via linuxdeploy-plugin-gtk.
 #
 # Usage: appimage.sh <build-dir> <version> <arch>   (arch: x86_64 | aarch64)
@@ -32,11 +32,11 @@ chmod +x "$LD" linuxdeploy-plugin-gtk.sh
 # No FUSE on CI runners — run the AppImages by extracting them instead.
 export APPIMAGE_EXTRACT_AND_RUN=1
 export DEPLOY_GTK_VERSION=4
-export OUTPUT="copyclip-${VERSION}-${ARCH}.AppImage"
+export OUTPUT="voidclip-${VERSION}-${ARCH}.AppImage"
 
 "./${LD}" --appdir "$APPDIR" --plugin gtk \
-  --desktop-file "$APPDIR/usr/share/applications/dev.walkercito.CopyClip.desktop" \
-  --icon-file "$APPDIR/usr/share/icons/hicolor/scalable/apps/dev.walkercito.CopyClip.svg" \
+  --desktop-file "$APPDIR/usr/share/applications/io.github.akashmahedy.VoidClip.desktop" \
+  --icon-file "$APPDIR/usr/share/icons/hicolor/scalable/apps/io.github.akashmahedy.VoidClip.svg" \
   --output appimage
 
 mv "$OUTPUT" "$BUILD_DIR/${OUTPUT}"

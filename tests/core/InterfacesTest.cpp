@@ -19,8 +19,8 @@
 
 namespace {
 
-namespace core = copyclip::core;
-namespace testing = copyclip::testing;
+namespace core = voidclip::core;
+namespace testing = voidclip::testing;
 
 // Compile-time half: each fake must concretely implement its abstract seam.
 // std::derived_from replaces Python's isinstance against a Protocol.

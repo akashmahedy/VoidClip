@@ -6,7 +6,7 @@
 #include <string>
 #include <utility>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -27,7 +27,7 @@ FirstRunDialog::FirstRunDialog(GtkWidget* parent, std::string initial_accelerato
 
     GtkWidget* status = adw_status_page_new();
     adw_status_page_set_icon_name(ADW_STATUS_PAGE(status), "edit-paste-symbolic");
-    adw_status_page_set_title(ADW_STATUS_PAGE(status), "Welcome to CopyClip");
+    adw_status_page_set_title(ADW_STATUS_PAGE(status), "Welcome to VoidClip");
     adw_status_page_set_description(ADW_STATUS_PAGE(status),
                                     "Your clipboard history, one shortcut away.");
 
@@ -70,4 +70,4 @@ void FirstRunDialog::finish() {
     on_finished_(accelerator_);
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

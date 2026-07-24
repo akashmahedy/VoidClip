@@ -1,4 +1,4 @@
-"""Shared helpers for CopyClip C++ quality hooks (PostToolUse).
+"""Shared helpers for VoidClip C++ quality hooks (PostToolUse).
 
 Each hook receives the tool payload as JSON on stdin and decides whether to act on the
 edited file. These helpers centralise payload parsing, path scoping, and tool execution so

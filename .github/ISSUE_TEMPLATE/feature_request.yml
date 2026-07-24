@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea or improvement for CopyClip
+description: Suggest an idea or improvement for VoidClip
 labels: ["enhancement"]
 body:
   - type: markdown

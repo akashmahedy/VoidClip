@@ -33,7 +33,7 @@
 #include <string>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 class ClipCard;
 
@@ -56,6 +56,8 @@ public:
     void present();
     // The underlying window widget, for parenting dialogs.
     [[nodiscard]] GtkWidget* native() const;
+    // Present a user-facing problem with a single acknowledgement action.
+    void show_error(const std::string& heading, const std::string& body);
 
 private:
     void build_ui(GtkApplication* application);
@@ -74,6 +76,7 @@ private:
     void pin(const std::string& content);
     void remove_selected();
     void clear_history();
+    void confirm_clear_history();
     void toggle_capture();
     void refresh_capture_button();
     void open_settings();
@@ -102,4 +105,4 @@ private:
     core::HistoryService::Subscription history_subscription_;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

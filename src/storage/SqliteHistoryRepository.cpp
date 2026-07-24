@@ -20,7 +20,7 @@
 #include <system_error>
 #include <vector>
 
-namespace copyclip::storage {
+namespace voidclip::storage {
 
 namespace {
 
@@ -43,7 +43,7 @@ constexpr const char* kSchemaMetadata =
     "CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)";
 
 constexpr const char* kMetadataOwnerKey = "owner";
-constexpr const char* kMetadataOwnerValue = "copyclip";
+constexpr const char* kMetadataOwnerValue = "voidclip";
 constexpr const char* kInsertOwner = "INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)";
 constexpr const char* kSelectOwner = "SELECT value FROM metadata WHERE key = ?";
 constexpr const char* kCheckTable = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?";
@@ -63,7 +63,7 @@ constexpr std::filesystem::perms kPrivateFilePermissions =
     std::filesystem::perms::owner_read | std::filesystem::perms::owner_write;
 
 // A second process can touch the same DB (e.g. the global-shortcut launch running
-// alongside a COPYCLIP_STANDALONE dev instance). WAL allows a reader and a writer
+// alongside a VOIDCLIP_STANDALONE dev instance). WAL allows a reader and a writer
 // to coexist, and the busy timeout makes a writer wait briefly for the lock rather
 // than failing immediately with "database is locked".
 constexpr int kBusyTimeoutMs = 3000;
@@ -279,7 +279,7 @@ std::filesystem::path ensure_parent(const std::filesystem::path& db_path) {
     return query.executeStep();
 }
 
-// Whether an existing file is, or looks like, a CopyClip database we should keep: it
+// Whether an existing file is, or looks like, a VoidClip database we should keep: it
 // carries our owner marker, has the `entries` table (covering databases made before
 // the marker existed, which must be migrated in place, never wiped), or has no user
 // tables at all -- an empty file, including a sibling instance's database caught
@@ -316,7 +316,7 @@ std::filesystem::path ensure_parent(const std::filesystem::path& db_path) {
     }
 }
 
-// Move a foreign database aside so a fresh CopyClip database can take its place. The
+// Move a foreign database aside so a fresh VoidClip database can take its place. The
 // main file moves first and a failure THROWS -- we must never fall through and
 // adopt/stamp a stranger's database. Its WAL/SHM/journal sidecars then move
 // best-effort with the same suffix (renaming only the main file would orphan them
@@ -342,7 +342,7 @@ std::filesystem::path ensure_parent(const std::filesystem::path& db_path) {
 }
 
 // Ensure the parent directory exists, then move aside any pre-existing file that
-// isn't ours so the constructor opens onto a clean CopyClip database.
+// isn't ours so the constructor opens onto a clean VoidClip database.
 [[nodiscard]] std::filesystem::path prepare_db_path(const std::filesystem::path& db_path) {
     ensure_parent(db_path);
     if (std::filesystem::is_regular_file(db_path) && !looks_like_our_db(db_path)) {
@@ -461,4 +461,4 @@ std::vector<std::byte> SqliteHistoryRepository::image(const std::string& hash) c
     return std::vector<std::byte>{view.begin(), view.end()};
 }
 
-} // namespace copyclip::storage
+} // namespace voidclip::storage

@@ -1,26 +1,29 @@
 #!/usr/bin/env bash
-# CopyClip installer / uninstaller.
+# VoidClip installer / uninstaller.
 #
 # Detects your distribution and CPU architecture, downloads the best-matching
 # release asset, and installs it: a native package (.deb/.rpm) when possible,
-# otherwise a self-contained AppImage, otherwise a source build. CopyClip is added
+# otherwise a self-contained AppImage, otherwise a source build. VoidClip is added
 # to your login autostart. Re-running offers to update or remove it.
 #
-#   curl -fsSL https://raw.githubusercontent.com/Walkercito/CopyClip/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/akashmahedy/VoidClip/main/scripts/install.sh | bash
 #   curl -fsSL .../install.sh | bash -s -- --uninstall
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 
-REPO="Walkercito/CopyClip"
+REPO="akashmahedy/VoidClip"
 API="https://api.github.com/repos/${REPO}/releases/latest"
-APP="copyclip"
-APP_ID="dev.walkercito.CopyClip"
+APP="voidclip"
+APP_ID="io.github.akashmahedy.VoidClip"
+LEGACY_APP="copyclip"
+LEGACY_APP_ID="dev.walkercito.CopyClip"
 USER_BIN="${HOME}/.local/bin"
 USER_APPS="${HOME}/.local/share/applications"
 USER_ICONS="${HOME}/.local/share/icons/hicolor/scalable/apps"
 USER_ICONS_SYMBOLIC="${HOME}/.local/share/icons/hicolor/symbolic/apps"
 AUTOSTART_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/autostart"
 AUTOSTART_FILE="${AUTOSTART_DIR}/${APP_ID}.desktop"
+LEGACY_AUTOSTART_FILE="${AUTOSTART_DIR}/${LEGACY_APP_ID}.desktop"
 
 # --- presentation -------------------------------------------------------------
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -88,10 +91,10 @@ ${BOLD}Usage${NC}
 
 ${BOLD}Options${NC}
   ${GRN}-i${NC}, ${GRN}--install${NC}      Install, or update an existing install, to the latest release
-  ${GRN}-u${NC}, ${GRN}--uninstall${NC}    Remove CopyClip
+  ${GRN}-u${NC}, ${GRN}--uninstall${NC}    Remove VoidClip
   ${GRN}-h${NC}, ${GRN}--help${NC}         Show this help
 
-With no option, CopyClip is installed — or, if already present, you are asked
+With no option, VoidClip is installed — or, if already present, you are asked
 whether to update or remove it.
 
 ${BOLD}Examples${NC}
@@ -204,7 +207,7 @@ enable_autostart() { # $1 = exec command/path
   cat > "$AUTOSTART_FILE" <<EOF
 [Desktop Entry]
 Type=Application
-Name=CopyClip
+Name=VoidClip
 Comment=Keep and reuse your clipboard history
 Exec=$1 --background
 Icon=${APP_ID}
@@ -214,6 +217,7 @@ EOF
 }
 
 disable_autostart() { rm -f "$AUTOSTART_FILE"; }
+disable_legacy_autostart() { rm -f "$LEGACY_AUTOSTART_FILE"; }
 
 # Every user-dir file an AppImage install creates, so install/purge/uninstall stay
 # in sync and none is ever orphaned. Keep this the single source of truth.
@@ -223,6 +227,14 @@ appimage_files() {
     "${USER_APPS}/${APP_ID}.desktop" \
     "${USER_ICONS}/${APP_ID}.svg" \
     "${USER_ICONS_SYMBOLIC}/${APP_ID}-symbolic.svg"
+}
+
+legacy_appimage_files() {
+  printf '%s\n' \
+    "${USER_BIN}/${LEGACY_APP}" \
+    "${USER_APPS}/${LEGACY_APP_ID}.desktop" \
+    "${USER_ICONS}/${LEGACY_APP_ID}.svg" \
+    "${USER_ICONS_SYMBOLIC}/${LEGACY_APP_ID}-symbolic.svg"
 }
 
 # Refresh the user icon cache so added/removed icons resolve without a re-login.
@@ -238,6 +250,12 @@ purge_appimage_files() {
     need update-desktop-database && update-desktop-database -q "$USER_APPS" 2>/dev/null || true
     refresh_icon_cache
     note "Removed a previous AppImage install to avoid a conflict."
+  fi
+  if [ -e "${USER_BIN}/${LEGACY_APP}" ] || [ -e "${USER_APPS}/${LEGACY_APP_ID}.desktop" ]; then
+    legacy_appimage_files | xargs -r rm -f
+    need update-desktop-database && update-desktop-database -q "$USER_APPS" 2>/dev/null || true
+    refresh_icon_cache
+    note "Removed the legacy CopyClip AppImage install."
   fi
 }
 
@@ -273,6 +291,7 @@ install_rpm() {
 install_appimage() {
   local url; url="$(asset_url "-${ARCH}.AppImage")"
   [ -n "$url" ] || return 1
+  purge_appimage_files
   mkdir -p "$USER_BIN" "$USER_APPS" "$USER_ICONS" "$USER_ICONS_SYMBOLIC"
   local f="${USER_BIN}/${APP}"
   local staged="${TMP}/${APP}.AppImage"
@@ -297,7 +316,7 @@ install_appimage() {
   cat > "${USER_APPS}/${APP_ID}.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=CopyClip
+Name=VoidClip
 Comment=Keep and reuse your clipboard history
 Exec=${f}
 Icon=${APP_ID}
@@ -325,7 +344,7 @@ install_from_source() {
     "git clone --depth 1 https://github.com/microsoft/vcpkg.git '$VCPKG_ROOT' && '$VCPKG_ROOT/bootstrap-vcpkg.sh' -disableMetrics" \
     || die "vcpkg bootstrap failed."
   run_step "Compiling (release)" bash -c \
-    "cd '$src' && cmake --preset release && cmake --build --preset release --target copyclip-gtk" \
+    "cd '$src' && cmake --preset release && cmake --build --preset release --target voidclip-gtk" \
     || die "Build failed."
   ensure_sudo
   run_step "Installing to /usr/local" \
@@ -358,7 +377,7 @@ do_install() {
   field "Architecture" "$ARCH"
   field "Release" "$RELEASE_TAG"
 
-  section "Installing CopyClip ${RELEASE_TAG}"
+  section "Installing VoidClip ${RELEASE_TAG}"
   INSTALLED_BIN="$APP"
   if [ -z "$DEB_ARCH" ]; then
     install_from_source
@@ -378,10 +397,11 @@ do_install() {
   fi
 
   enable_autostart "$INSTALLED_BIN"
+  disable_legacy_autostart
   tick "Enabled autostart on login"
 
   section "Done"
-  tick "CopyClip ${RELEASE_TAG} is installed"
+  tick "VoidClip ${RELEASE_TAG} is installed"
   note "Find it in your applications menu, or launch it from a terminal:"
   printf '       %s$%s %s%s%s%s\n\n' "$DIM" "$NC" "$BOLD" "$WHT" "$APP" "$NC"
 }
@@ -406,7 +426,7 @@ do_uninstall() {
   detect_installed
   if [ -z "$INSTALLED_VIA" ]; then
     section "Uninstall"
-    warn "CopyClip does not appear to be installed."
+    warn "VoidClip does not appear to be installed."
     printf '\n'
     exit 0
   fi
@@ -416,7 +436,7 @@ do_uninstall() {
     rpm) via_label="system package (rpm)" ;;
     appimage) via_label="AppImage" ;;
   esac
-  section "Removing CopyClip"
+  section "Removing VoidClip"
   field "Version" "${INSTALLED_VERSION:-—}"
   field "Method" "$via_label"
 
@@ -442,10 +462,11 @@ do_uninstall() {
       ;;
   esac
   disable_autostart
+  disable_legacy_autostart
   tick "Removed autostart entry"
 
   section "Done"
-  tick "CopyClip removed"
+  tick "VoidClip removed"
   printf '\n'
 }
 
@@ -479,7 +500,7 @@ main() {
     "")
       detect_installed
       if [ -n "$INSTALLED_VIA" ]; then
-        section "CopyClip is already installed${INSTALLED_VERSION:+ (v${INSTALLED_VERSION})}"
+        section "VoidClip is already installed${INSTALLED_VERSION:+ (v${INSTALLED_VERSION})}"
         printf '   %s[%sU%s]%spdate, %s[%sR%s]%semove, or %s[%sC%s]%sancel? ' \
           "$WHT" "$GRN" "$WHT" "$NC" "$WHT" "$RED" "$WHT" "$NC" "$WHT" "$YLW" "$WHT" "$NC"
         local ans=""

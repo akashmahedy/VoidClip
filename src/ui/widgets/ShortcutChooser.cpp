@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -85,7 +85,7 @@ ShortcutChooser::ShortcutChooser(GtkWidget* parent, AdwPreferencesGroup* group, 
                                  AcceleratorCallback on_changed)
     : parent_{parent}, on_changed_{std::move(on_changed)}, accelerator_{std::move(initial)},
       combo_row_{ADW_COMBO_ROW(adw_combo_row_new())} {
-    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(combo_row_), "Open CopyClip");
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(combo_row_), "Open VoidClip");
     gtk_widget_set_tooltip_text(GTK_WIDGET(combo_row_), "Key combination that summons the window");
     adw_preferences_group_add(group, GTK_WIDGET(combo_row_));
     g_signal_connect(combo_row_, "notify::selected", G_CALLBACK(&ShortcutChooser::on_selected),
@@ -275,4 +275,4 @@ void ShortcutChooser::apply(const std::string& accelerator) {
     on_changed_(accelerator_);
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

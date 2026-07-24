@@ -7,10 +7,10 @@
 
 namespace {
 
-using copyclip::ui::build_keybinding_array;
-using copyclip::ui::parse_keybinding_paths;
-using copyclip::ui::quick_picks;
-using copyclip::ui::QuickPick;
+using voidclip::ui::build_keybinding_array;
+using voidclip::ui::parse_keybinding_paths;
+using voidclip::ui::quick_picks;
+using voidclip::ui::QuickPick;
 
 // quick_picks() surfaces the presets as label/accelerator pairs for the capture
 // UI's one-tap buttons; Super+V leads, and none is blank.

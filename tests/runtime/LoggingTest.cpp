@@ -14,21 +14,21 @@ namespace {
 // global, so each case drops the application logger to stay isolated.
 class LoggingTest : public ::testing::Test {
 public:
-    void SetUp() override { spdlog::drop(std::string{copyclip::config::kAppId}); }
-    void TearDown() override { spdlog::drop(std::string{copyclip::config::kAppId}); }
+    void SetUp() override { spdlog::drop(std::string{voidclip::config::kAppId}); }
+    void TearDown() override { spdlog::drop(std::string{voidclip::config::kAppId}); }
 };
 
 TEST_F(LoggingTest, SetsLevel) {
-    copyclip::runtime::configure_logging(spdlog::level::debug);
-    const auto logger = spdlog::get(std::string{copyclip::config::kAppId});
+    voidclip::runtime::configure_logging(spdlog::level::debug);
+    const auto logger = spdlog::get(std::string{voidclip::config::kAppId});
     ASSERT_NE(logger, nullptr);
     EXPECT_EQ(logger->level(), spdlog::level::debug);
 }
 
 TEST_F(LoggingTest, IsIdempotent) {
-    copyclip::runtime::configure_logging();
-    copyclip::runtime::configure_logging();
-    const auto logger = spdlog::get(std::string{copyclip::config::kAppId});
+    voidclip::runtime::configure_logging();
+    voidclip::runtime::configure_logging();
+    const auto logger = spdlog::get(std::string{voidclip::config::kAppId});
     ASSERT_NE(logger, nullptr);
     EXPECT_EQ(logger->sinks().size(), 1U);
 }

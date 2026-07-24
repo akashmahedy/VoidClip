@@ -38,11 +38,11 @@
     {
       "name": "asan",
       "displayName": "ASan+UBSan+LSan",
-      "description": "Debug base with AddressSanitizer + UndefinedBehaviorSanitizer (LSan ships with ASan on Linux). Sanitizers attach via the copyclip::sanitizers target, not global flags.",
+      "description": "Debug base with AddressSanitizer + UndefinedBehaviorSanitizer (LSan ships with ASan on Linux). Sanitizers attach via the voidclip::sanitizers target, not global flags.",
       "inherits": "base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "COPYCLIP_SANITIZE": "ON"
+        "VOIDCLIP_SANITIZE": "ON"
       }
     }
   ],

@@ -8,9 +8,9 @@
 #include <span>
 #include <string>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 // 16-character hex digest of `bytes`.
 [[nodiscard]] std::string content_hash(std::span<const std::byte> bytes);
 
-} // namespace copyclip::core
+} // namespace voidclip::core

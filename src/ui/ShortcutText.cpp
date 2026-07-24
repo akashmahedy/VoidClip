@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 std::vector<QuickPick> quick_picks() {
     std::vector<QuickPick> picks;
@@ -49,4 +49,4 @@ std::string build_keybinding_array(const std::vector<std::string>& paths) {
     return result;
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

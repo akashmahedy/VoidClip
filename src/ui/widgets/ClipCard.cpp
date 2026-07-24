@@ -28,7 +28,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -234,4 +234,4 @@ void ClipCard::on_pressed(int /*n_press*/, double x, double y) {
     Glib::signal_idle().connect_once([action, entry] { action(entry); });
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

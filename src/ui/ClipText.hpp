@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 struct Preview {
     std::string text; // single-line, length-capped preview of the content
@@ -31,4 +31,4 @@ struct Preview {
 // label/Pango or Glib::ustring search paths, which reject invalid UTF-8.
 [[nodiscard]] std::string make_valid_utf8(std::string_view text);
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

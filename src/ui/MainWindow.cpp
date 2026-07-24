@@ -32,7 +32,7 @@
 #include <malloc.h> // malloc_trim — return freed heap to the OS on hide (glibc only)
 #endif
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -86,7 +86,16 @@ void trim_heap() {
 MainWindow::MainWindow(GtkApplication* application, core::HistoryService& history,
                        core::SettingsService& settings, core::ClipboardSource& clipboard,
                        Paster& paster)
-    : history_{history}, settings_{settings}, copy_action_{clipboard, history, settings, paster},
+    : history_{history}, settings_{settings},
+      copy_action_{clipboard, history, settings, paster,
+                   [this](bool success) {
+                       if (!success) {
+                           present();
+                           show_error("Paste did not run",
+                                      "The clip is still on your clipboard. Paste it manually "
+                                      "with Ctrl+V, or install a supported input helper.");
+                       }
+                   }},
       application_{application} {
     build_ui(application);
     history_subscription_ = history_.get().subscribe([this] { schedule_refresh(); });
@@ -100,6 +109,7 @@ MainWindow::~MainWindow() {
     // Unsubscribe first so a late notification can't reach a half-torn-down window,
     // then destroy the window so its child widgets — and the signal slots bound to
     // `this` — die with it rather than later with the GtkApplication.
+    copy_action_.cancel_pending();
     history_subscription_ = {};
     if (window_ != nullptr) {
         gtk_window_destroy(GTK_WINDOW(window_));
@@ -165,7 +175,8 @@ void MainWindow::build_ui(GtkApplication* application) {
     auto* clear_button = Gtk::make_managed<Gtk::Button>();
     clear_button->set_icon_name("user-trash-symbolic");
     clear_button->set_tooltip_text("Clear unpinned history");
-    clear_button->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::clear_history));
+    clear_button->signal_clicked().connect(
+        sigc::mem_fun(*this, &MainWindow::confirm_clear_history));
     adw_header_bar_pack_end(header, GTK_WIDGET(clear_button->gobj()));
 
     capture_button_ = Gtk::make_managed<Gtk::Button>();
@@ -458,6 +469,32 @@ void MainWindow::clear_history() {
     history_.get().clear_unpinned();
 }
 
+void MainWindow::confirm_clear_history() {
+    const std::vector<core::ClipboardEntry> entries = history_.get().entries();
+    const bool has_unpinned = std::ranges::any_of(
+        entries, [](const core::ClipboardEntry& entry) { return !entry.pinned; });
+    if (!has_unpinned) {
+        return;
+    }
+
+    auto* dialog = ADW_ALERT_DIALOG(
+        adw_alert_dialog_new("Clear unpinned history?",
+                             "This removes every unpinned clipboard item. Pinned items stay."));
+    adw_alert_dialog_add_response(dialog, "cancel", "Cancel");
+    adw_alert_dialog_add_response(dialog, "clear", "Clear");
+    adw_alert_dialog_set_default_response(dialog, "cancel");
+    adw_alert_dialog_set_close_response(dialog, "cancel");
+    adw_alert_dialog_set_response_appearance(dialog, "clear", ADW_RESPONSE_DESTRUCTIVE);
+    g_signal_connect(dialog, "response",
+                     G_CALLBACK(+[](AdwAlertDialog*, const char* response, gpointer self) {
+                         if (std::string_view{response} == "clear") {
+                             static_cast<MainWindow*>(self)->clear_history();
+                         }
+                     }),
+                     this);
+    adw_dialog_present(ADW_DIALOG(dialog), GTK_WIDGET(window_));
+}
+
 void MainWindow::toggle_capture() {
     core::Settings updated = settings_.get().settings();
     updated.capture_paused = !updated.capture_paused;
@@ -510,6 +547,14 @@ GtkWidget* MainWindow::native() const {
     return GTK_WIDGET(window_);
 }
 
+void MainWindow::show_error(const std::string& heading, const std::string& body) {
+    auto* dialog = ADW_ALERT_DIALOG(adw_alert_dialog_new(heading.c_str(), body.c_str()));
+    adw_alert_dialog_add_response(dialog, "ok", "OK");
+    adw_alert_dialog_set_default_response(dialog, "ok");
+    adw_alert_dialog_set_close_response(dialog, "ok");
+    adw_dialog_present(ADW_DIALOG(dialog), GTK_WIDGET(window_));
+}
+
 void MainWindow::toggle() {
     if (gtk_widget_get_visible(GTK_WIDGET(window_)) != FALSE) {
         gtk_widget_set_visible(GTK_WIDGET(window_), FALSE);
@@ -545,4 +590,4 @@ void MainWindow::refresh_tray() {
     }
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

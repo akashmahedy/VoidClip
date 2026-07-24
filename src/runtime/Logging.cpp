@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-namespace copyclip::runtime {
+namespace voidclip::runtime {
 
 namespace {
 
@@ -34,4 +34,4 @@ void configure_logging(spdlog::level::level_enum level) {
     spdlog::cfg::load_env_levels();
 }
 
-} // namespace copyclip::runtime
+} // namespace voidclip::runtime

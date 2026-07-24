@@ -1,6 +1,6 @@
 #pragma once
 
-// Value objects for the engine's domain. Mirrors copyclip/core/models.py
+// Value objects for the engine's domain. Mirrors voidclip/core/models.py
 // (frozen dataclasses); C++ has no runtime frozen guard, so these are plain
 // value types — immutability is convention, not enforced. Members are public
 // and non-const so the types stay fully copyable/movable (Rule of Zero): const
@@ -20,7 +20,7 @@
 #include <string_view>
 #include <vector>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 // A captured clipboard item. `content` is the dedup key: the plain text for Text
 // and RichText, or the image's content hash for Image. `html` carries RichText
@@ -89,4 +89,4 @@ struct Settings {
     bool show_panel_icon = true;
 };
 
-} // namespace copyclip::core
+} // namespace voidclip::core

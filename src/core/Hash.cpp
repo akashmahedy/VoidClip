@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <format>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 namespace {
 
@@ -21,4 +21,4 @@ std::string content_hash(std::span<const std::byte> bytes) {
     return std::format("{:016x}", hash);
 }
 
-} // namespace copyclip::core
+} // namespace voidclip::core

@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -65,4 +65,9 @@ bool is_desktop_shortcut_registered(const std::string& command, const std::strin
                              : is_gnome_shortcut_registered();
 }
 
-} // namespace copyclip::ui
+bool migrate_legacy_desktop_shortcut(const std::string& command, const std::string& accelerator) {
+    return is_xfce_session() ? migrate_legacy_xfce_shortcut({command, accelerator})
+                             : migrate_legacy_gnome_shortcut(command, accelerator);
+}
+
+} // namespace voidclip::ui

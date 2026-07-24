@@ -51,14 +51,16 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Validate desktop entry
-        run: desktop-file-validate packaging/dev.walkercito.CopyClip.desktop
+        run: |
+          desktop-file-validate packaging/io.github.akashmahedy.VoidClip.desktop
+          desktop-file-validate packaging/io.github.akashmahedy.VoidClip-autostart.desktop
 
       - name: Configure & build (release)
         env:
           VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          cmake --preset release -DCOPYCLIP_VERSION="$VERSION"
-          cmake --build --preset release --target copyclip-gtk
+          cmake --preset release -DVOIDCLIP_VERSION="$VERSION"
+          cmake --build --preset release --target voidclip-gtk
 
       - name: Package .deb / .rpm / .tar.gz
         working-directory: build/release
@@ -75,7 +77,8 @@ jobs:
           mkdir -p dist
           cp build/release/*.deb build/release/*.rpm build/release/*.tar.gz \
              build/release/*.AppImage dist/
-          (cd dist && sha256sum copyclip-* > "SHA256SUMS-${{ matrix.arch }}")
+          (cd dist && sha256sum *.deb *.rpm *.tar.gz *.AppImage \
+             > "SHA256SUMS-${{ matrix.arch }}")
           ls -lh dist
 
       - name: Attach to GitHub Release
@@ -89,6 +92,6 @@ jobs:
         if: github.ref_type != 'tag'
         uses: actions/upload-artifact@v4
         with:
-          name: copyclip-${{ matrix.arch }}
+          name: voidclip-${{ matrix.arch }}
           path: dist/*
           if-no-files-found: error

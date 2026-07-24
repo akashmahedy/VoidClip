@@ -6,7 +6,10 @@
 
 #include <spdlog/spdlog.h>
 
-namespace copyclip::ui {
+#include <memory>
+#include <utility>
+
+namespace voidclip::ui {
 
 namespace {
 
@@ -15,10 +18,19 @@ constexpr unsigned int kPasteDelayMs = 120;
 } // namespace
 
 CopyAction::CopyAction(core::ClipboardSource& clipboard, core::HistoryService& history,
-                       core::SettingsService& settings, Paster& paster)
-    : clipboard_{clipboard}, history_{history}, settings_{settings}, paster_{paster} {}
+                       core::SettingsService& settings, Paster& paster,
+                       PasteFinishedCallback on_paste_finished)
+    : clipboard_{clipboard}, history_{history}, settings_{settings}, paster_{paster},
+      paste_state_{std::make_shared<PasteCompletionState>()} {
+    paste_state_->callback = std::move(on_paste_finished);
+}
 
 CopyAction::~CopyAction() {
+    cancel_pending();
+}
+
+void CopyAction::cancel_pending() {
+    paste_state_->alive.store(false);
     paste_connection_.disconnect();
 }
 
@@ -49,7 +61,12 @@ bool CopyAction::run(const core::ClipContent& content, CopyMode mode) {
         paste_connection_.disconnect();
         paste_connection_ = Glib::signal_timeout().connect(
             [this] {
-                paster_.get().paste();
+                const std::shared_ptr<PasteCompletionState> state = paste_state_;
+                paster_.get().paste([state](bool success) {
+                    if (state->alive.load() && state->callback) {
+                        state->callback(success);
+                    }
+                });
                 return false;
             },
             kPasteDelayMs);
@@ -57,4 +74,4 @@ bool CopyAction::run(const core::ClipContent& content, CopyMode mode) {
     return mode != CopyMode::FollowSettings || settings.auto_hide_on_copy || should_paste;
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

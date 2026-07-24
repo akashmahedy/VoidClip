@@ -1,12 +1,12 @@
 [Desktop Entry]
 Type=Application
-Name=CopyClip
+Name=VoidClip
 GenericName=Clipboard Manager
 Comment=Keep and reuse your clipboard history
-Exec=copyclip
-Icon=dev.walkercito.CopyClip
+Exec=voidclip
+Icon=io.github.akashmahedy.VoidClip
 Terminal=false
 Categories=Utility;GTK;
 Keywords=clipboard;history;paste;copy;clip;
 StartupNotify=true
-StartupWMClass=dev.walkercito.CopyClip
+StartupWMClass=io.github.akashmahedy.VoidClip

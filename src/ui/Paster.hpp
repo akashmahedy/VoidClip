@@ -4,10 +4,14 @@
 // window. Injected so the copy use case can be exercised without spawning input
 // tools (see KeystrokePaster for the real implementation).
 
-namespace copyclip::ui {
+#include <functional>
+
+namespace voidclip::ui {
 
 class Paster {
 public:
+    using FinishedCallback = std::function<void(bool)>;
+
     Paster() = default;
     virtual ~Paster() = default;
 
@@ -16,7 +20,8 @@ public:
     Paster(Paster&&) = delete;
     Paster& operator=(Paster&&) = delete;
 
-    virtual void paste() const = 0;
+    // Starts a paste attempt and reports success on the GTK main loop.
+    virtual void paste(FinishedCallback on_finished) const = 0;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

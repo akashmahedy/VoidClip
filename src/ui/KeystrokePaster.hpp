@@ -7,16 +7,16 @@
 #include "core/Enums.hpp"
 #include "ui/Paster.hpp"
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 class KeystrokePaster final : public Paster {
 public:
     explicit KeystrokePaster(core::SessionType session);
 
-    void paste() const override;
+    void paste(FinishedCallback on_finished) const override;
 
 private:
     core::SessionType session_;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

@@ -17,7 +17,7 @@
 #include <string>
 #include <utility>
 
-namespace copyclip::storage {
+namespace voidclip::storage {
 
 namespace {
 
@@ -149,4 +149,4 @@ void JsonSettingsRepository::save(const core::Settings& settings) {
     std::filesystem::rename(temp_path, path_);
 }
 
-} // namespace copyclip::storage
+} // namespace voidclip::storage

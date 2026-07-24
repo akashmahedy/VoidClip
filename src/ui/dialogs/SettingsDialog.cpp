@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -91,7 +91,7 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     auto* shortcut_enabled_row = ADW_SWITCH_ROW(adw_switch_row_new());
     adw_preferences_row_set_title(ADW_PREFERENCES_ROW(shortcut_enabled_row), "Global shortcut");
     gtk_widget_set_tooltip_text(GTK_WIDGET(shortcut_enabled_row),
-                                "Open CopyClip from anywhere with a keyboard shortcut");
+                                "Open VoidClip from anywhere with a keyboard shortcut");
     adw_switch_row_set_active(
         shortcut_enabled_row,
         static_cast<gboolean>(is_desktop_shortcut_registered(executable_path(), current.hotkey)));
@@ -127,7 +127,7 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     auto* capture_paused_row = ADW_SWITCH_ROW(adw_switch_row_new());
     adw_preferences_row_set_title(ADW_PREFERENCES_ROW(capture_paused_row), "Pause recording");
     gtk_widget_set_tooltip_text(GTK_WIDGET(capture_paused_row),
-                                "Keep CopyClip running without saving new clipboard contents");
+                                "Keep VoidClip running without saving new clipboard contents");
     adw_switch_row_set_active(capture_paused_row, static_cast<gboolean>(current.capture_paused));
     adw_preferences_group_add(behaviour_group, GTK_WIDGET(capture_paused_row));
     g_signal_connect(capture_paused_row, "notify::active",
@@ -137,7 +137,7 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     adw_preferences_row_set_title(ADW_PREFERENCES_ROW(panel_icon_row), "Show panel icon");
     gtk_widget_set_tooltip_text(
         GTK_WIDGET(panel_icon_row),
-        "Show a panel icon to open CopyClip (needs a tray/AppIndicator host)");
+        "Show a panel icon to open VoidClip (needs a tray/AppIndicator host)");
     adw_switch_row_set_active(panel_icon_row, static_cast<gboolean>(current.show_panel_icon));
     adw_preferences_group_add(behaviour_group, GTK_WIDGET(panel_icon_row));
     g_signal_connect(panel_icon_row, "notify::active",
@@ -267,4 +267,4 @@ void SettingsDialog::apply_panel_icon(bool active) {
     on_panel_icon_changed_(); // let the window add/remove the tray icon live
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

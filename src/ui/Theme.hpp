@@ -6,9 +6,9 @@
 
 #include "core/Enums.hpp"
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 // Set libadwaita's color scheme from the engine Theme (System follows the desktop).
 void apply_theme(core::Theme theme);
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

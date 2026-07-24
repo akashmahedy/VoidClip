@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 // A built-in preset offered as a one-tap quick-pick in the shortcut UI.
 struct QuickPick {
@@ -26,4 +26,4 @@ struct QuickPick {
 // Render entries back into a gsettings string-array value ("@as []" when empty).
 [[nodiscard]] std::string build_keybinding_array(const std::vector<std::string>& paths);
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

@@ -7,7 +7,7 @@
 
 #include <string_view>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 // True when `query` is a case-insensitive (ASCII) subsequence of `text`. An empty
 // query always matches. For full Unicode case-folding, pass already-lowercased
@@ -15,4 +15,4 @@ namespace copyclip::ui {
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters): query/text read clearly.
 [[nodiscard]] bool fuzzy_matches(std::string_view query, std::string_view text);
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

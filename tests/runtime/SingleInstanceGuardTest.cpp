@@ -17,8 +17,8 @@
 
 namespace {
 
-using copyclip::runtime::SingleInstanceGuard;
-using copyclip::testing::TempDir;
+using voidclip::runtime::SingleInstanceGuard;
+using voidclip::testing::TempDir;
 
 // Create a Unix-domain socket file at `path` and close it WITHOUT unlinking,
 // simulating a crashed instance that left a stale socket file behind.
@@ -41,7 +41,7 @@ void leave_stale_socket(const std::filesystem::path& path) {
 
 TEST(SingleInstanceGuardTest, SecondAcquireFailsAndSignalsFirst) {
     const TempDir dir;
-    const std::filesystem::path socket_path = dir.path() / "copyclip.sock";
+    const std::filesystem::path socket_path = dir.path() / "voidclip.sock";
 
     std::atomic<int> show_count{0};
     std::promise<void> shown;
@@ -65,7 +65,7 @@ TEST(SingleInstanceGuardTest, SecondAcquireFailsAndSignalsFirst) {
 
 TEST(SingleInstanceGuardTest, ReleaseAllowsReacquire) {
     const TempDir dir;
-    const std::filesystem::path socket_path = dir.path() / "copyclip.sock";
+    const std::filesystem::path socket_path = dir.path() / "voidclip.sock";
 
     SingleInstanceGuard first{socket_path};
     ASSERT_TRUE(first.acquire([] {}));
@@ -78,7 +78,7 @@ TEST(SingleInstanceGuardTest, ReleaseAllowsReacquire) {
 
 TEST(SingleInstanceGuardTest, StaleSocketIsReclaimed) {
     const TempDir dir;
-    const std::filesystem::path socket_path = dir.path() / "copyclip.sock";
+    const std::filesystem::path socket_path = dir.path() / "voidclip.sock";
     leave_stale_socket(socket_path);
     ASSERT_TRUE(std::filesystem::exists(socket_path));
 
@@ -89,7 +89,7 @@ TEST(SingleInstanceGuardTest, StaleSocketIsReclaimed) {
 
 TEST(SingleInstanceGuardTest, NonOwningGuardDestructionLeavesOwnerSocketIntact) {
     const TempDir dir;
-    const std::filesystem::path socket_path = dir.path() / "copyclip.sock";
+    const std::filesystem::path socket_path = dir.path() / "voidclip.sock";
 
     SingleInstanceGuard first{socket_path};
     ASSERT_TRUE(first.acquire([] {}));

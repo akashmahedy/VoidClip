@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 class ClipCard : public Gtk::ListBoxRow {
 public:
@@ -55,4 +55,4 @@ private:
     ActionCallback on_pin_;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

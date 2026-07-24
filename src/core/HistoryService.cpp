@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 namespace {
 
@@ -97,7 +97,7 @@ bool HistoryService::add(const ClipContent& content) {
     ClipboardEntry entry;
     entry.kind = content.kind;
     if (content.kind == ClipKind::Image) {
-        if (content.image.empty()) {
+        if (content.image.empty() || content.image.size() > kMaxImagePayloadBytes) {
             return false;
         }
         entry.content = content_hash(content.image); // dedup key = image fingerprint
@@ -105,7 +105,11 @@ bool HistoryService::add(const ClipContent& content) {
         entry.image_width = content.image_width;
         entry.image_height = content.image_height;
     } else {
-        if (is_blank(content.text)) {
+        const bool payload_too_large =
+            content.text.size() > kMaxTextPayloadBytes ||
+            content.html.size() > kMaxTextPayloadBytes ||
+            content.html.size() > kMaxTextPayloadBytes - content.text.size();
+        if (is_blank(content.text) || payload_too_large) {
             return false;
         }
         entry.content = content.text;
@@ -280,4 +284,4 @@ void HistoryService::notify() {
     }
 }
 
-} // namespace copyclip::core
+} // namespace voidclip::core

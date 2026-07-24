@@ -1,7 +1,7 @@
 #pragma once
 
 // SQLite-backed core::HistoryRepository, mirroring the reference module
-// copyclip/storage/sqlite_history.py. SQLite::Database closes the handle in its
+// voidclip/storage/sqlite_history.py. SQLite::Database closes the handle in its
 // destructor, so the type needs no custom special members (Rule of Zero).
 
 #include "core/Interfaces.hpp"
@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-namespace copyclip::storage {
+namespace voidclip::storage {
 
 class SqliteHistoryRepository final : public core::HistoryRepository {
 public:
@@ -42,4 +42,4 @@ private:
     mutable SQLite::Database database_;
 };
 
-} // namespace copyclip::storage
+} // namespace voidclip::storage

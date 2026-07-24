@@ -9,7 +9,7 @@
 # sun_path's limit.
 set -euo pipefail
 
-app="${1:?usage: smoke.sh <path-to-copyclip>}"
+app="${1:?usage: smoke.sh <path-to-voidclip>}"
 run_dir="$(mktemp -d /tmp/cc-smoke-run.XXXXXX)"
 data_dir="$(mktemp -d /tmp/cc-smoke-data.XXXXXX)"
 chmod 700 "${run_dir}"

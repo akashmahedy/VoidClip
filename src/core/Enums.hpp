@@ -2,7 +2,7 @@
 
 // Domain enumerations and their string representations.
 //
-// Mirrors copyclip/core/enums.py (Python StrEnum, where an enumerator *is* its
+// Mirrors voidclip/core/enums.py (Python StrEnum, where an enumerator *is* its
 // string value). The string values must match the reference: HotkeySpec::
 // display_name and the storage/settings layers depend on them. Each enum has a
 // single constexpr {enumerator, value} table feeding both to_string (the value)
@@ -15,7 +15,7 @@
 #include <optional>
 #include <string_view>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 // Each value set is tiny, so the enums use a single-byte underlying type; the
 // explicit type also fixes the representation across translation units.
@@ -159,4 +159,4 @@ hotkey_preset_from_string(std::string_view text) {
     return detail::from_string_impl(text, detail::kClipKindTable);
 }
 
-} // namespace copyclip::core
+} // namespace voidclip::core
