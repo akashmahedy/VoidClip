@@ -374,6 +374,13 @@ void MainWindow::apply_filter() {
     if (visible > 0) {
         stack_->set_visible_child(kPageList);
         ensure_selection();
+        // The window can open before the first clip exists, leaving the hidden
+        // search entry without focus. When that first clip arrives, restore the
+        // intended keyboard-first state without stealing focus from another child.
+        if (gtk_widget_get_visible(GTK_WIDGET(window_)) != FALSE &&
+            gtk_window_get_focus(GTK_WINDOW(window_)) == nullptr) {
+            search_->grab_focus();
+        }
         return;
     }
     if (card_count_ == 0) {
