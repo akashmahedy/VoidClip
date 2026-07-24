@@ -3,7 +3,7 @@
 #include <cctype>
 #include <cstddef>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -30,4 +30,4 @@ bool fuzzy_matches(std::string_view query, std::string_view text) {
     return false;
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

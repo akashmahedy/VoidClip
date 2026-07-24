@@ -10,9 +10,9 @@
 
 namespace {
 
-using copyclip::adapters::QtClipboardSource;
-using copyclip::core::ClipContent;
-using copyclip::core::ClipKind;
+using voidclip::adapters::QtClipboardSource;
+using voidclip::core::ClipContent;
+using voidclip::core::ClipKind;
 
 // Mirrors tests/adapters/test_qt_clipboard.py, run against the offscreen QPA
 // platform so it needs no real display.

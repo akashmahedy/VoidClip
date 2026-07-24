@@ -17,7 +17,7 @@
 #include <memory>
 #include <string>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 class SettingsDialog {
 public:
@@ -62,4 +62,4 @@ private:
     std::unique_ptr<ShortcutChooser> shortcut_chooser_;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

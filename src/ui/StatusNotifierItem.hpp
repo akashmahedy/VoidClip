@@ -12,7 +12,7 @@
 #include <functional>
 #include <string>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 class StatusNotifierItem {
 public:
@@ -57,4 +57,4 @@ private:
     guint menu_registration_ = 0;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

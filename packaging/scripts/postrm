@@ -1,5 +1,5 @@
 #!/bin/sh
-# Refresh the desktop and icon caches so CopyClip appears in the menu with its
+# Refresh the desktop and icon caches so VoidClip appears in the menu with its
 # icon right after install. Best-effort: a missing tool is not an error.
 set -e
 

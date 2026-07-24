@@ -8,10 +8,10 @@
 
 namespace {
 
-using copyclip::core::Settings;
-using copyclip::core::SettingsService;
-using copyclip::core::Theme;
-using copyclip::testing::InMemorySettingsRepository;
+using voidclip::core::Settings;
+using voidclip::core::SettingsService;
+using voidclip::core::Theme;
+using voidclip::testing::InMemorySettingsRepository;
 
 // Mirrors tests/core/test_settings.py: the service loads on construction,
 // persists every change, and drives the first-run lifecycle.

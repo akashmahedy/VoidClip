@@ -10,7 +10,7 @@
 #include <optional>
 #include <string>
 
-namespace copyclip::test {
+namespace voidclip::test {
 
 class ScopedEnv {
 public:
@@ -47,4 +47,4 @@ private:
     std::optional<std::string> previous_;
 };
 
-} // namespace copyclip::test
+} // namespace voidclip::test

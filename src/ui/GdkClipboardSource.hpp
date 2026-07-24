@@ -20,7 +20,7 @@
 #include <optional>
 #include <string>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 class GdkClipboardSource final : public core::ClipboardSource {
 public:
@@ -75,4 +75,4 @@ private:
     Glib::RefPtr<Gio::Cancellable> cancellable_;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

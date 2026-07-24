@@ -13,7 +13,7 @@
 #include <string>
 #include <utility>
 
-namespace copyclip::testing {
+namespace voidclip::testing {
 
 class TempDir {
 public:
@@ -46,7 +46,7 @@ public:
 
 private:
     // mkdtemp template: the trailing "XXXXXX" is replaced with unique characters.
-    static constexpr const char* kNameTemplate = "copyclip-test-XXXXXX";
+    static constexpr const char* kNameTemplate = "voidclip-test-XXXXXX";
 
     // Remove the directory tree if this instance still owns one. Errors are
     // swallowed via the non-throwing overload: a destructor must not throw
@@ -62,4 +62,4 @@ private:
     std::filesystem::path path_;
 };
 
-} // namespace copyclip::testing
+} // namespace voidclip::testing

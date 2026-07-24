@@ -27,7 +27,7 @@
 
 class QDBusInterface;
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 class PortalHotkeyListener : public QObject, public core::HotkeyListener {
     Q_OBJECT
@@ -61,4 +61,4 @@ public Q_SLOTS:
                           qulonglong timestamp, const QVariantMap& options);
 };
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 ClipboardEngine::ClipboardEngine(ClipboardSource& clipboard, HotkeyListener& hotkey,
                                  HistoryService& history, SettingsService& settings)
@@ -49,4 +49,4 @@ void ClipboardEngine::on_hotkey() {
     }
 }
 
-} // namespace copyclip::core
+} // namespace voidclip::core

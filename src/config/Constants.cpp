@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace copyclip::config {
+namespace voidclip::config {
 
 namespace {
 
@@ -47,6 +47,17 @@ std::filesystem::path data_dir() {
     return base / kAppId;
 }
 
+bool migrate_legacy_data() {
+    const std::filesystem::path current = data_dir();
+    const std::filesystem::path legacy = current.parent_path() / kLegacyAppId;
+    std::error_code error;
+    if (std::filesystem::exists(current, error) || !std::filesystem::exists(legacy, error)) {
+        return true;
+    }
+    std::filesystem::rename(legacy, current, error);
+    return !error;
+}
+
 std::filesystem::path history_db() {
     return data_dir() / kHistoryDbName;
 }
@@ -63,4 +74,4 @@ std::filesystem::path instance_socket() {
     return runtime_dir() / kInstanceSocketName;
 }
 
-} // namespace copyclip::config
+} // namespace voidclip::config

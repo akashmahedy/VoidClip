@@ -14,8 +14,8 @@
 
 namespace {
 
-namespace core = copyclip::core;
-namespace config = copyclip::config;
+namespace core = voidclip::core;
+namespace config = voidclip::config;
 
 // A fresh entry is not pinned; Python's "assignment raises" check has no analogue.
 TEST(ModelsTest, ClipboardEntryDefaultsToUnpinned) {

@@ -12,7 +12,7 @@
 
 #include <unistd.h>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -385,4 +385,4 @@ GVariant* StatusNotifierItem::handle_menu_get(GDBusConnection* /*connection*/,
     return nullptr;
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

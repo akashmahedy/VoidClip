@@ -1,4 +1,4 @@
-# CopyClip — Engineering Standards
+# VoidClip — Engineering Standards
 
 A clipboard manager for Linux (X11 + Wayland). The shipping app is **C++**: a pure engine
 with Qt/X11 adapters and a **GTK4 + libadwaita** UI. This file defines its non-negotiable

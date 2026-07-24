@@ -59,7 +59,7 @@
   </g>
 
   <!-- wordmark + tagline -->
-  <text x="300" y="206" font-size="98" font-weight="800" letter-spacing="-3" fill="url(#word)">CopyClip</text>
+  <text x="300" y="206" font-size="98" font-weight="800" letter-spacing="-3" fill="url(#word)">VoidClip</text>
   <text x="307" y="276" font-size="31" font-weight="500" fill="#9fb0cc">Clipboard history for Linux</text>
 
   <!-- capability pill -->

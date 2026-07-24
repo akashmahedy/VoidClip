@@ -6,14 +6,14 @@
 #include <cstddef>
 #include <string_view>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 // Reverse-DNS application id (D-Bus name, .desktop, single-instance identity).
-inline constexpr std::string_view kApplicationId{"dev.walkercito.CopyClip"};
+inline constexpr std::string_view kApplicationId{"io.github.akashmahedy.VoidClip"};
 
 // Symbolic (monochrome, transparent) icon for the panel/tray item, so the shell
 // recolours it to the panel foreground. Installed under hicolor/symbolic/apps.
-inline constexpr std::string_view kPanelIconName{"dev.walkercito.CopyClip-symbolic"};
+inline constexpr std::string_view kPanelIconName{"io.github.akashmahedy.VoidClip-symbolic"};
 
 inline constexpr int kWindowDefaultWidth = 420;
 inline constexpr int kWindowDefaultHeight = 640;
@@ -52,4 +52,4 @@ inline constexpr std::string_view kGskRendererCairo{"cairo"};
 // grows; two arenas suffice for a mostly-idle background app.
 inline constexpr int kMallocArenaMax = 2;
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

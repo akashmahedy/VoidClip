@@ -1,4 +1,4 @@
-// CopyClip engine entry point — headless composition root (mirrors the
+// VoidClip engine entry point — headless composition root (mirrors the
 // reference main.py: the engine runs with no window; the UI is a separate
 // effort). The single-instance guard is acquired BEFORE Qt is built, so a second
 // launch signals the running instance and exits without a QGuiApplication.
@@ -32,14 +32,14 @@ constexpr mode_t kPrivateDataUmask = 0077;
 } // namespace
 
 int main(int argc, char** argv) {
-    using namespace copyclip;
+    using namespace voidclip;
 
     ::umask(kPrivateDataUmask);
     runtime::configure_logging();
 
     runtime::SingleInstanceGuard guard{config::instance_socket()};
     if (!guard.acquire([] { spdlog::info("show requested via IPC (UI pending)"); })) {
-        spdlog::info("CopyClip is already running; signalling it to show");
+        spdlog::info("VoidClip is already running; signalling it to show");
         if (!guard.signal_show()) {
             spdlog::warn("failed to signal the running instance");
         }
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
         // it uses the default preset. The shipped GTK app honours the user's custom
         // shortcut through GNOME's settings-daemon instead.
         const std::unique_ptr<core::HotkeyListener> listener = adapters::select_hotkey_listener(
-            core::detect_session(), core::get_spec(core::kDefaultPreset), "copyclip-show-ui");
+            core::detect_session(), core::get_spec(core::kDefaultPreset), "voidclip-show-ui");
 
         // Declared last so it is destroyed first: the clipboard, listener,
         // history, and settings it references all outlive it.
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
             [&history] { spdlog::info("history now holds {} entries", history.entries().size()); });
 
         engine.start();
-        spdlog::info("CopyClip engine running (headless). Ctrl+C to quit.");
+        spdlog::info("VoidClip engine running (headless). Ctrl+C to quit.");
 
         const int code = QGuiApplication::exec();
 

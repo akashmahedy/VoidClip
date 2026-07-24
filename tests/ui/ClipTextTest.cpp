@@ -6,9 +6,9 @@
 
 namespace {
 
-using copyclip::ui::make_preview;
-using copyclip::ui::make_valid_utf8;
-using copyclip::ui::Preview;
+using voidclip::ui::make_preview;
+using voidclip::ui::make_valid_utf8;
+using voidclip::ui::Preview;
 
 // UTF-8 encoding of U+FFFD (REPLACEMENT CHARACTER), what make_valid_utf8 emits
 // for each malformed byte.

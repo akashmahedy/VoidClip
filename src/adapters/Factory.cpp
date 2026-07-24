@@ -12,7 +12,7 @@
 #include <memory>
 #include <utility>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 namespace {
 
@@ -55,4 +55,4 @@ std::unique_ptr<core::ClipboardSource> build_clipboard_source() {
     return std::make_unique<QtClipboardSource>();
 }
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

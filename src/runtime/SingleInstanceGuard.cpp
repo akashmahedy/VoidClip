@@ -13,7 +13,7 @@
 #include <string>
 #include <utility>
 
-namespace copyclip::runtime {
+namespace voidclip::runtime {
 
 namespace {
 
@@ -172,4 +172,4 @@ bool SingleInstanceGuard::is_stale() const {
     return ::connect(probe.get(), as_sockaddr(addr), static_cast<socklen_t>(sizeof(addr))) != 0;
 }
 
-} // namespace copyclip::runtime
+} // namespace voidclip::runtime

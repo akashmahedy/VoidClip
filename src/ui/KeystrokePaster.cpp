@@ -1,6 +1,7 @@
 #include "ui/KeystrokePaster.hpp"
 
 #include <glibmm/error.h>
+#include <glibmm/main.h>
 #include <glibmm/miscutils.h>
 #include <glibmm/spawn.h>
 
@@ -21,7 +22,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -34,7 +35,7 @@ constexpr auto kKeyEventDelay = std::chrono::milliseconds(50);
 constexpr std::uint16_t kVendorId = 0x1234;
 constexpr std::uint16_t kProductId = 0x5678;
 constexpr std::uint16_t kDeviceVersion = 1;
-constexpr const char* kDeviceName = "copyclip-paste";
+constexpr const char* kDeviceName = "voidclip-paste";
 
 // input_event values: a key's pressed/released state, and the SYN_REPORT marker.
 constexpr std::int32_t kKeyPress = 1;
@@ -160,7 +161,7 @@ private:
 
 KeystrokePaster::KeystrokePaster(core::SessionType session) : session_{session} {}
 
-void KeystrokePaster::paste() const {
+void KeystrokePaster::paste(FinishedCallback on_finished) const {
     // Inject on a detached thread: the uinput sequence sleeps for the device-settle
     // and inter-key delays (~0.3s), which must never block the UI thread. The
     // captured values are self-contained, so the thread is safe to outlive this call
@@ -168,20 +169,31 @@ void KeystrokePaster::paste() const {
     // alive even if the app quits and tears down spdlog's registry mid-paste.
     const core::SessionType session = session_;
     const std::shared_ptr<spdlog::logger> logger = spdlog::default_logger();
-    std::thread([session, logger] {
+    std::thread([session, logger, on_finished = std::move(on_finished)]() mutable {
+        bool success = false;
         if (paste_via_uinput()) {
             logger->debug("auto-paste: Ctrl+V injected via /dev/uinput");
-            return;
-        }
-        logger->warn("auto-paste: uinput unavailable/failed; trying CLI fallbacks");
-        for (const std::vector<std::string>& argv : paste_commands(session)) {
-            if (try_run(argv)) {
-                logger->debug("auto-paste: Ctrl+V injected via {}", argv.front());
-                return;
+            success = true;
+        } else {
+            logger->warn("auto-paste: uinput unavailable/failed; trying CLI fallbacks");
+            for (const std::vector<std::string>& argv : paste_commands(session)) {
+                if (try_run(argv)) {
+                    logger->debug("auto-paste: Ctrl+V injected via {}", argv.front());
+                    success = true;
+                    break;
+                }
             }
         }
-        logger->warn("auto-paste: no working input method; clip left on the clipboard");
+        if (!success) {
+            logger->warn("auto-paste: no working input method; clip left on the clipboard");
+        }
+        Glib::signal_idle().connect_once(
+            [on_finished = std::move(on_finished), success]() mutable {
+                if (on_finished) {
+                    on_finished(success);
+                }
+            });
     }).detach();
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

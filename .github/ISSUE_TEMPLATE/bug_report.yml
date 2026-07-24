@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in CopyClip isn't working right
+description: Something in VoidClip isn't working right
 labels: ["bug"]
 body:
   - type: markdown
@@ -22,7 +22,7 @@ body:
     attributes:
       label: What happened?
       description: What you saw, and what you expected instead.
-      placeholder: When I copy an image and open CopyClip, the window freezes for a second...
+      placeholder: When I copy an image and open VoidClip, the window freezes for a second...
     validations:
       required: true
   - type: textarea
@@ -40,7 +40,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: CopyClip version
+      label: VoidClip version
       description: The release tag you installed (e.g. v0.2.1), or the commit if you built from source.
       placeholder: v0.2.1
     validations:
@@ -65,7 +65,7 @@ body:
   - type: dropdown
     id: install
     attributes:
-      label: How did you install CopyClip?
+      label: How did you install VoidClip?
       options:
         - One-line installer (install.sh)
         - .deb package
@@ -85,6 +85,6 @@ body:
     attributes:
       label: Logs
       description: |
-        Run CopyClip from a terminal with debug logging and paste anything relevant:
-        `SPDLOG_LEVEL=debug copyclip`
+        Run VoidClip from a terminal with debug logging and paste anything relevant:
+        `SPDLOG_LEVEL=debug voidclip`
       render: shell

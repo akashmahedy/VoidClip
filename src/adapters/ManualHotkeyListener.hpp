@@ -10,7 +10,7 @@
 #include <functional>
 #include <string>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 class ManualHotkeyListener final : public core::HotkeyListener {
 public:
@@ -27,4 +27,4 @@ private:
     std::string command_;
 };
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

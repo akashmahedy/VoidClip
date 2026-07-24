@@ -16,7 +16,7 @@
 #include <functional>
 #include <string>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 class SettingsService {
 public:
@@ -40,4 +40,4 @@ private:
     Settings settings_;
 };
 
-} // namespace copyclip::core
+} // namespace voidclip::core

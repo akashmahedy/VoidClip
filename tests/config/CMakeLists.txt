@@ -1,1 +1,1 @@
-copyclip_add_test(constants_test SOURCES ConstantsTest.cpp LIBS copyclip::config)
+voidclip_add_test(constants_test SOURCES ConstantsTest.cpp LIBS voidclip::config)

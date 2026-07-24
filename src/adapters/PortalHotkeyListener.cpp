@@ -12,7 +12,7 @@
 #include <string>
 #include <utility>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 namespace {
 
@@ -72,4 +72,4 @@ void PortalHotkeyListener::handle_activated(const QDBusObjectPath& /*session_han
     }
 }
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

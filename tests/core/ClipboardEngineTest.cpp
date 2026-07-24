@@ -13,14 +13,14 @@
 
 namespace {
 
-using copyclip::core::ClipboardEngine;
-using copyclip::core::HistoryService;
-using copyclip::core::SettingsService;
-using copyclip::testing::FakeClipboardSource;
-using copyclip::testing::FakeClock;
-using copyclip::testing::FakeHotkeyListener;
-using copyclip::testing::InMemoryHistoryRepository;
-using copyclip::testing::InMemorySettingsRepository;
+using voidclip::core::ClipboardEngine;
+using voidclip::core::HistoryService;
+using voidclip::core::SettingsService;
+using voidclip::testing::FakeClipboardSource;
+using voidclip::testing::FakeClock;
+using voidclip::testing::FakeHotkeyListener;
+using voidclip::testing::InMemoryHistoryRepository;
+using voidclip::testing::InMemorySettingsRepository;
 
 // Mirrors tests/core/test_engine.py: the engine wires the clipboard source and
 // hotkey listener to the services and exposes a show-request observer.

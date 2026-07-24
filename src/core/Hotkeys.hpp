@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 // The preset selected when none is configured (reference DEFAULT_PRESET).
 inline constexpr HotkeyPreset kDefaultPreset = HotkeyPreset::SuperV;
@@ -36,4 +36,4 @@ inline constexpr HotkeyPreset kDefaultPreset = HotkeyPreset::SuperV;
 // all_presets()).
 [[nodiscard]] std::vector<std::pair<HotkeyPreset, HotkeySpec>> all_presets();
 
-} // namespace copyclip::core
+} // namespace voidclip::core

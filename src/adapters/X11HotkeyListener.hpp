@@ -26,7 +26,7 @@
 #include <stop_token>
 #include <thread>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 class X11HotkeyListener final : public core::HotkeyListener {
 public:
@@ -61,4 +61,4 @@ private:
     std::jthread thread_;
 };
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

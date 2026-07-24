@@ -1,4 +1,4 @@
-<!-- Thanks for contributing to CopyClip! Keep PRs focused — one logical change. -->
+<!-- Thanks for contributing to VoidClip! Keep PRs focused — one logical change. -->
 
 ## What does this PR do?
 

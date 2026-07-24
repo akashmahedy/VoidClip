@@ -18,15 +18,15 @@
 #include <string>
 #include <utility>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
-// Opt-in dev/test escape hatch (COPYCLIP_STANDALONE=1): run with no single-instance
+// Opt-in dev/test escape hatch (VOIDCLIP_STANDALONE=1): run with no single-instance
 // registration, so a freshly-built binary can run alongside an installed copy
 // instead of becoming a remote instance of it (which would just exit immediately).
 [[nodiscard]] Gio::Application::Flags app_flags() {
-    const char* standalone = std::getenv("COPYCLIP_STANDALONE");
+    const char* standalone = std::getenv("VOIDCLIP_STANDALONE");
     return (standalone != nullptr && *standalone != '\0') ? Gio::Application::Flags::NON_UNIQUE
                                                           : Gio::Application::Flags::DEFAULT_FLAGS;
 }
@@ -83,12 +83,19 @@ void Application::on_activate() {
                         settings_.get().complete_first_run(accelerator);
                         if (!register_desktop_shortcut(executable_path(), accelerator)) {
                             spdlog::warn("global shortcut could not be registered");
+                            window_->show_error(
+                                "Shortcut was not enabled",
+                                "VoidClip could not register the global shortcut. Open Settings "
+                                "to try again or choose another key combination.");
                         }
                     });
-            } else if (is_desktop_shortcut_registered(executable_path(),
-                                                      settings_.get().settings().hotkey)) {
-                if (!register_desktop_shortcut(executable_path(),
-                                               settings_.get().settings().hotkey)) {
+            } else {
+                const std::string command = executable_path();
+                const std::string accelerator = settings_.get().settings().hotkey;
+                if (migrate_legacy_desktop_shortcut(command, accelerator)) {
+                    spdlog::info("migrated the legacy CopyClip global shortcut");
+                } else if (is_desktop_shortcut_registered(command, accelerator) &&
+                           !register_desktop_shortcut(command, accelerator)) {
                     spdlog::warn("global shortcut could not be refreshed");
                 }
             }
@@ -102,4 +109,4 @@ void Application::on_activate() {
     window_->toggle();
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

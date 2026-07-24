@@ -4,7 +4,7 @@
 
 namespace {
 
-using copyclip::ui::fuzzy_matches;
+using voidclip::ui::fuzzy_matches;
 
 TEST(FuzzyTest, EmptyQueryMatchesAnything) {
     EXPECT_TRUE(fuzzy_matches("", "anything"));

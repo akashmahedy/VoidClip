@@ -1,4 +1,4 @@
-# clang-format configuration for the CopyClip C++ engine.
+# clang-format configuration for the VoidClip C++ engine.
 #
 # Pinned to clang-format 18 (matches the local toolchain and CI). LLVM base —
 # the closest fit to the idiomatic modern-C++ style the project uses — tuned to

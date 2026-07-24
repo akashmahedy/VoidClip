@@ -22,11 +22,11 @@
 
 namespace {
 
-namespace core = copyclip::core;
-namespace storage = copyclip::storage;
-namespace config = copyclip::config;
+namespace core = voidclip::core;
+namespace storage = voidclip::storage;
+namespace config = voidclip::config;
 
-using copyclip::testing::TempDir;
+using voidclip::testing::TempDir;
 
 // Field-by-field equality: Settings exposes no operator== (Models.hpp belongs to
 // the core layer, which a storage task must not modify), so cases compare fields.

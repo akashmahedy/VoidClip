@@ -12,7 +12,7 @@
 #include <functional>
 #include <string>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 class ShortcutChooser {
 public:
@@ -62,4 +62,4 @@ private:
     guint pending_ = 0;                            // idle source dispatching a user selection
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

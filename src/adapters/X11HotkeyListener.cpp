@@ -12,7 +12,7 @@
 #include <string>
 #include <utility>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 namespace {
 
@@ -139,4 +139,4 @@ void X11HotkeyListener::serve(const std::stop_token& stop_token) {
     }
 }
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

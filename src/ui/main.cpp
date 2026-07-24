@@ -1,4 +1,4 @@
-// CopyClip GTK4 + libadwaita application entry point.
+// VoidClip GTK4 + libadwaita application entry point.
 //
 // Composition root for the windowed frontend: builds the engine (SQLite history,
 // system clock, JSON settings) and runs the UI. Links only the pure engine (plus
@@ -36,7 +36,7 @@ constexpr mode_t kPrivateDataUmask = 0077;
 } // namespace
 
 int main(int argc, char** argv) {
-    using namespace copyclip;
+    using namespace voidclip;
 
     // Clipboard history can contain passwords and private documents. New data
     // directories/files must be accessible only to the current user.
@@ -85,6 +85,10 @@ int main(int argc, char** argv) {
 
     runtime::configure_logging();
     try {
+        if (!config::migrate_legacy_data()) {
+            spdlog::warn("could not migrate the legacy CopyClip data directory; "
+                         "starting with a separate VoidClip profile");
+        }
         storage::JsonSettingsRepository settings_repo{config::settings_file()};
         core::SettingsService settings{settings_repo};
 

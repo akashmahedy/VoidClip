@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-namespace copyclip::testing {
+namespace voidclip::testing {
 
 // Build a plain-text ClipContent — convenience for tests exercising the clipboard
 // seam, which now carries kind-tagged content rather than a bare string.
@@ -154,4 +154,4 @@ struct InMemorySettingsRepository final : public core::SettingsRepository {
     core::Settings saved;
 };
 
-} // namespace copyclip::testing
+} // namespace voidclip::testing

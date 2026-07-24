@@ -1,4 +1,4 @@
-# clang-tidy configuration for the CopyClip C++ engine.
+# clang-tidy configuration for the VoidClip C++ engine.
 #
 # Pinned to clang-tidy 18 (matches the local toolchain and CI). This is the lint
 # gate: the five families CLAUDE.md mandates are enabled wholesale, then a small,

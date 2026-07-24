@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 class ClipboardEngine {
 public:
@@ -47,4 +47,4 @@ private:
     std::vector<std::function<void()>> show_callbacks_;
 };
 
-} // namespace copyclip::core
+} // namespace voidclip::core

@@ -1,6 +1,6 @@
 #pragma once
 
-// One-time welcome dialog: introduces CopyClip and lets the user choose the
+// One-time welcome dialog: introduces VoidClip and lets the user choose the
 // summon shortcut (free-form capture or a preset). On close it reports the chosen
 // GTK accelerator; the caller completes first run and registers the shortcut.
 // Built with the libadwaita C API.
@@ -13,7 +13,7 @@
 #include <memory>
 #include <string>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 class FirstRunDialog {
 public:
@@ -39,4 +39,4 @@ private:
     std::unique_ptr<ShortcutChooser> chooser_;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

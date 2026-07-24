@@ -16,7 +16,7 @@
 #include <optional>
 #include <string>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 class QtClipboardSource final : public core::ClipboardSource {
 public:
@@ -42,4 +42,4 @@ private:
     QMetaObject::Connection connection_;
 };
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

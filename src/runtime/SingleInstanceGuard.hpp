@@ -1,7 +1,7 @@
 #pragma once
 
 // Single-instance enforcement and "show" IPC over a Unix domain socket, mirroring
-// the reference module copyclip/runtime/single_instance.py. The first instance to
+// the reference module voidclip/runtime/single_instance.py. The first instance to
 // acquire() binds, listens, and serves "show" requests on a background thread;
 // later instances fail to bind and call signal_show() to wake it.
 
@@ -13,7 +13,7 @@
 
 #include <unistd.h>
 
-namespace copyclip::runtime {
+namespace voidclip::runtime {
 
 // Move-only RAII wrapper around a POSIX file descriptor: closes it on destruction
 // so a socket fd is never owned as a bare int.
@@ -94,4 +94,4 @@ private:
     bool acquired_ = false;
 };
 
-} // namespace copyclip::runtime
+} // namespace voidclip::runtime

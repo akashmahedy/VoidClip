@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 QtClipboardSource::QtClipboardSource() {
     if (QGuiApplication::instance() == nullptr) {
@@ -51,4 +51,4 @@ void QtClipboardSource::handle_change() {
     }
 }
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

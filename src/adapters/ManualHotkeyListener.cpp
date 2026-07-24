@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 ManualHotkeyListener::ManualHotkeyListener(core::HotkeySpec spec, std::string command)
     : spec_{std::move(spec)}, command_{std::move(command)} {}
@@ -21,4 +21,4 @@ bool ManualHotkeyListener::rebind(const core::HotkeySpec& spec) {
     return true;
 }
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

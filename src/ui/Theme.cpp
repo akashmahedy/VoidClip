@@ -2,7 +2,7 @@
 
 #include <adwaita.h>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 namespace {
 
@@ -24,4 +24,4 @@ void apply_theme(core::Theme theme) {
     adw_style_manager_set_color_scheme(adw_style_manager_get_default(), to_color_scheme(theme));
 }
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

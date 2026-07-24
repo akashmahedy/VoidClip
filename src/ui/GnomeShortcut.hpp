@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 // Absolute path of the running executable — the command GNOME runs on the
 // keypress. Empty if it cannot be resolved.
@@ -17,10 +17,14 @@ namespace copyclip::ui {
 // desktops.
 bool register_gnome_shortcut(const std::string& command, const std::string& accelerator);
 
-// Remove CopyClip's keybinding, leaving the user's other shortcuts intact.
+// Remove VoidClip's keybinding, leaving the user's other shortcuts intact.
 bool unregister_gnome_shortcut();
 
-// Whether CopyClip's keybinding is currently present in gsettings.
+// Whether VoidClip's keybinding is currently present in gsettings.
 [[nodiscard]] bool is_gnome_shortcut_registered();
 
-} // namespace copyclip::ui
+// Replace the pre-rebrand /copyclip/ custom-keybinding entry when present.
+[[nodiscard]] bool migrate_legacy_gnome_shortcut(const std::string& command,
+                                                 const std::string& accelerator);
+
+} // namespace voidclip::ui

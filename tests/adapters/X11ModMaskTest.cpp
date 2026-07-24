@@ -8,8 +8,8 @@
 
 namespace {
 
-using copyclip::adapters::modifiers_to_mask;
-using copyclip::core::Modifier;
+using voidclip::adapters::modifiers_to_mask;
+using voidclip::core::Modifier;
 
 // The X11 modifier mask bits are stable X protocol constants (defined in
 // <X11/X.h>), named here so this GoogleTest translation unit need not include

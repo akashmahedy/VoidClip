@@ -17,8 +17,8 @@
 
 namespace {
 
-namespace core = copyclip::core;
-namespace config = copyclip::config;
+namespace core = voidclip::core;
+namespace config = voidclip::config;
 
 // The closed set of presets under test, mirroring iteration over the Python
 // HotkeyPreset enum. Declared once so the cases stay DRY.

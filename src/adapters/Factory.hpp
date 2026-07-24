@@ -18,7 +18,7 @@
 #include <optional>
 #include <string>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 using HotkeyBuilder = std::function<std::unique_ptr<core::HotkeyListener>(const core::HotkeySpec&)>;
 
@@ -33,4 +33,4 @@ using HotkeyBuilder = std::function<std::unique_ptr<core::HotkeyListener>(const 
 // QGuiApplication to exist.
 [[nodiscard]] std::unique_ptr<core::ClipboardSource> build_clipboard_source();
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters

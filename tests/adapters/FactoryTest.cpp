@@ -15,14 +15,14 @@
 
 namespace {
 
-using copyclip::adapters::HotkeyBuilder;
-using copyclip::adapters::ManualHotkeyListener;
-using copyclip::adapters::select_hotkey_listener;
-using copyclip::core::HotkeyListener;
-using copyclip::core::HotkeySpec;
-using copyclip::core::Key;
-using copyclip::core::Modifier;
-using copyclip::core::SessionType;
+using voidclip::adapters::HotkeyBuilder;
+using voidclip::adapters::ManualHotkeyListener;
+using voidclip::adapters::select_hotkey_listener;
+using voidclip::core::HotkeyListener;
+using voidclip::core::HotkeySpec;
+using voidclip::core::Key;
+using voidclip::core::Modifier;
+using voidclip::core::SessionType;
 
 // A stand-in listener used to confirm a known session's builder is invoked.
 class StubListener final : public HotkeyListener {
@@ -47,7 +47,7 @@ HotkeySpec super_v() {
 
 TEST(FactoryTest, UnknownSessionUsesManualFallback) {
     const auto listener =
-        select_hotkey_listener(SessionType::Unknown, super_v(), "copyclip-show-ui",
+        select_hotkey_listener(SessionType::Unknown, super_v(), "voidclip-show-ui",
                                std::map<SessionType, HotkeyBuilder>{});
     EXPECT_NE(dynamic_cast<ManualHotkeyListener*>(listener.get()), nullptr);
 }
@@ -58,7 +58,7 @@ TEST(FactoryTest, KnownSessionUsesItsBuilder) {
         return std::make_unique<StubListener>(spec);
     };
     const auto listener =
-        select_hotkey_listener(SessionType::X11, super_v(), "copyclip-show-ui", builders);
+        select_hotkey_listener(SessionType::X11, super_v(), "voidclip-show-ui", builders);
     EXPECT_NE(dynamic_cast<StubListener*>(listener.get()), nullptr);
 }
 
@@ -68,7 +68,7 @@ TEST(FactoryTest, BuilderFailureFallsBackToManual) {
         throw std::runtime_error{"no display"};
     };
     const auto listener =
-        select_hotkey_listener(SessionType::X11, super_v(), "copyclip-show-ui", builders);
+        select_hotkey_listener(SessionType::X11, super_v(), "voidclip-show-ui", builders);
     EXPECT_NE(dynamic_cast<ManualHotkeyListener*>(listener.get()), nullptr);
 }
 

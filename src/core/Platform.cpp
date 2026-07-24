@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 namespace {
 
@@ -62,4 +62,4 @@ SessionType detect_session() {
     return SessionType::Unknown;
 }
 
-} // namespace copyclip::core
+} // namespace voidclip::core

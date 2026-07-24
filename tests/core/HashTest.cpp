@@ -7,7 +7,7 @@
 
 namespace {
 
-using copyclip::core::content_hash;
+using voidclip::core::content_hash;
 
 TEST(HashTest, IdenticalBytesHashEqual) {
     const std::vector<std::byte> a{std::byte{1}, std::byte{2}, std::byte{3}};

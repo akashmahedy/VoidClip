@@ -1,6 +1,6 @@
 #include "core/SettingsService.hpp"
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 SettingsService::SettingsService(SettingsRepository& repository)
     : repository_{repository}, settings_{repository.load()} {}
@@ -25,4 +25,4 @@ void SettingsService::complete_first_run(const std::string& accelerator) {
     update(next);
 }
 
-} // namespace copyclip::core
+} // namespace voidclip::core

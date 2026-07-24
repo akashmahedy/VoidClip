@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace copyclip::core::detail {
+namespace voidclip::core::detail {
 
 inline constexpr char kAsciiCaseGap = 'a' - 'A';
 
@@ -52,4 +52,4 @@ inline constexpr char kAsciiCaseGap = 'a' - 'A';
     return result;
 }
 
-} // namespace copyclip::core::detail
+} // namespace voidclip::core::detail

@@ -20,7 +20,7 @@
 #include <functional>
 #include <memory>
 
-namespace copyclip::ui {
+namespace voidclip::ui {
 
 class Application {
 public:
@@ -52,4 +52,4 @@ private:
     std::unique_ptr<FirstRunDialog> first_run_dialog_;
 };
 
-} // namespace copyclip::ui
+} // namespace voidclip::ui

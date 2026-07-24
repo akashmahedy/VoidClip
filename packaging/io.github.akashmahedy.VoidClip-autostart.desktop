@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=VoidClip
+Comment=Keep and reuse your clipboard history
+Exec=voidclip --background
+Icon=io.github.akashmahedy.VoidClip
+Terminal=false
+Categories=Utility;GTK;
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel

@@ -27,10 +27,15 @@
 #include <string>
 #include <vector>
 
-namespace copyclip::core {
+namespace voidclip::core {
 
 class HistoryService {
 public:
+    // Bound individual clipboard payloads before they reach SQLite or image
+    // decoding. The item-count cap alone cannot protect against one huge clip.
+    static constexpr std::size_t kMaxTextPayloadBytes = 4U * 1024U * 1024U;
+    static constexpr std::size_t kMaxImagePayloadBytes = 25U * 1024U * 1024U;
+
     HistoryService(HistoryRepository& repository, Clock& clock, int max_items);
 
     // Record a clip as the newest item. Blank text (or an empty image) is ignored
@@ -113,4 +118,4 @@ private:
     std::size_t next_subscriber_id_ = 0;
 };
 
-} // namespace copyclip::core
+} // namespace voidclip::core

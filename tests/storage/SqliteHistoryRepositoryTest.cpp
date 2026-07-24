@@ -24,10 +24,10 @@
 
 namespace {
 
-namespace core = copyclip::core;
-namespace storage = copyclip::storage;
+namespace core = voidclip::core;
+namespace storage = voidclip::storage;
 
-using copyclip::testing::TempDir;
+using voidclip::testing::TempDir;
 
 // A system_clock::time_point for a calendar date at midnight UTC, mirroring the
 // reference's datetime(Y, M, D) and keeping cases free of raw chrono plumbing.
@@ -311,7 +311,7 @@ TEST_F(SqliteHistoryRepositoryTest, LegacyDatabaseWithoutMarkerIsPreserved) {
 }
 
 // A genuinely foreign database (real tables, but none of ours and no owner marker)
-// is moved aside -- non-destructively -- so CopyClip starts on a clean, owned database.
+// is moved aside -- non-destructively -- so VoidClip starts on a clean, owned database.
 TEST_F(SqliteHistoryRepositoryTest, ForeignDatabaseIsArchived) {
     {
         SQLite::Database foreign{db_path(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE};
@@ -332,7 +332,7 @@ TEST_F(SqliteHistoryRepositoryTest, ForeignDatabaseIsArchived) {
     // The fresh database in its place is stamped as ours.
     SQLite::Database fresh{db_path().string(), SQLite::OPEN_READONLY};
     EXPECT_EQ(fresh.execAndGet("SELECT value FROM metadata WHERE key = 'owner'").getString(),
-              "copyclip");
+              "voidclip");
 }
 
 // A database explicitly stamped with a different owner is archived and replaced.

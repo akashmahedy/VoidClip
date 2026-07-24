@@ -8,9 +8,9 @@
 
 #include <span>
 
-namespace copyclip::adapters {
+namespace voidclip::adapters {
 
 // Combine modifier enums into an X11 modifier mask (ShiftMask/ControlMask/...).
 [[nodiscard]] unsigned int modifiers_to_mask(std::span<const core::Modifier> modifiers);
 
-} // namespace copyclip::adapters
+} // namespace voidclip::adapters
