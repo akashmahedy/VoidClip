@@ -98,12 +98,12 @@ jobs:
       - name: Installer and release contract
         run: |
           bash -n scripts/install.sh scripts/appimage.sh scripts/smoke.sh \
-            scripts/gtk-smoke.sh scripts/release-contract.sh
+            scripts/gtk-smoke.sh scripts/gtk-smoke-session.sh scripts/release-contract.sh
           ./scripts/release-contract.sh
 
       - name: Package and install DEB
         run: |
-          sudo apt-get install -y desktop-file-utils xvfb dbus-x11
+          sudo apt-get install -y desktop-file-utils xvfb dbus-x11 openbox xclip xdotool x11-utils sqlite3
           desktop-file-validate packaging/io.github.akashmahedy.VoidClip.desktop
           desktop-file-validate packaging/io.github.akashmahedy.VoidClip-autostart.desktop
           (cd build/release && cpack -G DEB)

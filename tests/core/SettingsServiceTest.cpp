@@ -40,10 +40,14 @@ TEST(SettingsServiceTest, FirstRunLifecycle) {
 
     EXPECT_TRUE(service.is_first_run());
 
-    service.complete_first_run("<Super>c");
+    Settings choices = service.settings();
+    choices.hotkey = "<Super>c";
+    choices.save_confidential_clips = true;
+    service.complete_first_run(choices);
 
     EXPECT_FALSE(service.is_first_run());
     EXPECT_EQ(service.settings().hotkey, "<Super>c");
+    EXPECT_TRUE(service.settings().save_confidential_clips);
     EXPECT_TRUE(repository.load().first_run_completed);
 }
 

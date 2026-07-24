@@ -34,7 +34,7 @@ void CopyAction::cancel_pending() {
     paste_connection_.disconnect();
 }
 
-bool CopyAction::run(const core::ClipContent& content, CopyMode mode) {
+CopyOutcome CopyAction::run(const core::ClipContent& content, CopyMode mode) {
     core::ClipContent resolved = content;
     if (mode == CopyMode::PastePlainText && resolved.kind == core::ClipKind::RichText) {
         resolved.kind = core::ClipKind::Text;
@@ -45,7 +45,7 @@ bool CopyAction::run(const core::ClipContent& content, CopyMode mode) {
         // The clipboard rejected the write; don't record it or hide the window, so
         // the user isn't misled into thinking the copy succeeded.
         spdlog::warn("clipboard write failed; clip not recorded");
-        return false;
+        return CopyOutcome::Failed;
     }
     // Paste-as-plain-text changes only the outgoing clipboard representation.
     // Keep the original rich entry in history so this one action does not
@@ -71,7 +71,9 @@ bool CopyAction::run(const core::ClipContent& content, CopyMode mode) {
             },
             kPasteDelayMs);
     }
-    return mode != CopyMode::FollowSettings || settings.auto_hide_on_copy || should_paste;
+    return (mode != CopyMode::FollowSettings || settings.auto_hide_on_copy || should_paste)
+               ? CopyOutcome::CopiedHide
+               : CopyOutcome::CopiedKeepOpen;
 }
 
 } // namespace voidclip::ui

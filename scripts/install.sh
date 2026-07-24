@@ -24,6 +24,7 @@ USER_ICONS_SYMBOLIC="${HOME}/.local/share/icons/hicolor/symbolic/apps"
 AUTOSTART_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/autostart"
 AUTOSTART_FILE="${AUTOSTART_DIR}/${APP_ID}.desktop"
 LEGACY_AUTOSTART_FILE="${AUTOSTART_DIR}/${LEGACY_APP_ID}.desktop"
+DATA_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/${APP}"
 
 # --- presentation -------------------------------------------------------------
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -92,6 +93,7 @@ ${BOLD}Usage${NC}
 ${BOLD}Options${NC}
   ${GRN}-i${NC}, ${GRN}--install${NC}      Install, or update an existing install, to the latest release
   ${GRN}-u${NC}, ${GRN}--uninstall${NC}    Remove VoidClip
+  ${GRN}--purge-data${NC}        Remove VoidClip and its saved history/settings
   ${GRN}-h${NC}, ${GRN}--help${NC}         Show this help
 
 With no option, VoidClip is installed — or, if already present, you are asked
@@ -108,6 +110,14 @@ need() { command -v "$1" >/dev/null 2>&1; }
 require_tools() {
   need curl || die "curl is required but not installed."
   need uname || die "uname is required but not installed."
+}
+
+prebuilt_runtime_supported() {
+  need getconf || return 0
+  local current
+  current="$(getconf GNU_LIBC_VERSION 2>/dev/null | awk '{print $2}')"
+  [ -z "$current" ] && return 0
+  [ "$(printf '%s\n%s\n' "2.38" "$current" | sort -V | head -1)" = "2.38" ]
 }
 
 # --- platform detection -------------------------------------------------------
@@ -377,6 +387,10 @@ do_install() {
   field "Architecture" "$ARCH"
   field "Release" "$RELEASE_TAG"
 
+  if ! prebuilt_runtime_supported; then
+    die "This release needs Linux Mint 22 / Ubuntu 24.04 or newer (glibc 2.38+). No files were installed."
+  fi
+
   section "Installing VoidClip ${RELEASE_TAG}"
   INSTALLED_BIN="$APP"
   if [ -z "$DEB_ARCH" ]; then
@@ -465,6 +479,27 @@ do_uninstall() {
   disable_legacy_autostart
   tick "Removed autostart entry"
 
+  local remove_data="${PURGE_DATA:-0}"
+  if [ "$remove_data" -eq 0 ] && [ -r /dev/tty ]; then
+    printf '   Remove saved clipboard history and settings too? [y/N] '
+    local answer=""
+    read -r answer </dev/tty || answer=""
+    case "$answer" in
+      y | Y | yes | YES) remove_data=1 ;;
+    esac
+  fi
+  if [ "$remove_data" -eq 1 ]; then
+    case "$DATA_DIR" in
+      */voidclip)
+        rm -rf -- "$DATA_DIR"
+        tick "Removed saved history and settings"
+        ;;
+      *) die "Refusing to remove an unexpected data path: ${DATA_DIR}" ;;
+    esac
+  else
+    note "Saved history and settings were kept in ${DATA_DIR}"
+  fi
+
   section "Done"
   tick "VoidClip removed"
   printf '\n'
@@ -473,9 +508,11 @@ do_uninstall() {
 # --- entry point --------------------------------------------------------------
 main() {
   local action=""
+  PURGE_DATA=0
   case "${1:-}" in
     -i | --install) action=install ;;
     -u | --uninstall) action=uninstall ;;
+    --purge-data) action=uninstall; PURGE_DATA=1 ;;
     -h | --help) usage; exit 0 ;;
     "") action="" ;;
     *) usage; printf '\n'; die "Unknown option: $1" ;;

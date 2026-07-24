@@ -34,6 +34,13 @@ TEST(ConstantsTest, HistoryAndSettingsLiveUnderDataDir) {
     EXPECT_EQ(config::settings_file().parent_path(), config::data_dir());
 }
 
+TEST(ConstantsTest, AutostartFileFollowsXdgConfigHome) {
+    const ScopedEnv xdg{"XDG_CONFIG_HOME", "/tmp/config"};
+    EXPECT_EQ(
+        config::autostart_file(),
+        std::filesystem::path{"/tmp/config/autostart/io.github.akashmahedy.VoidClip.desktop"});
+}
+
 TEST(ConstantsTest, MigratesLegacyCopyClipDataWhenVoidClipIsEmpty) {
     TempDir temp;
     const ScopedEnv xdg{"XDG_DATA_HOME", temp.path().string()};

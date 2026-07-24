@@ -39,6 +39,8 @@ void expect_settings_eq(const core::Settings& actual, const core::Settings& expe
     EXPECT_EQ(actual.auto_paste, expected.auto_paste);
     EXPECT_EQ(actual.capture_paused, expected.capture_paused);
     EXPECT_EQ(actual.show_panel_icon, expected.show_panel_icon);
+    EXPECT_EQ(actual.save_confidential_clips, expected.save_confidential_clips);
+    EXPECT_EQ(actual.start_at_login, expected.start_at_login);
 }
 
 // Write `text` verbatim to `path`, seeding a corrupt or hand-crafted file.
@@ -79,7 +81,9 @@ TEST_F(JsonSettingsRepositoryTest, SaveThenLoadRoundtrip) {
                                .auto_hide_on_copy = true,
                                .auto_paste = true,
                                .capture_paused = true,
-                               .show_panel_icon = false};
+                               .show_panel_icon = false,
+                               .save_confidential_clips = true,
+                               .start_at_login = false};
     repo().save(saved);
 
     const core::Settings loaded = storage::JsonSettingsRepository{settings_path()}.load();

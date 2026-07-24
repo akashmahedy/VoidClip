@@ -1,6 +1,7 @@
 #include "ui/MainWindow.hpp"
 
 #include "config/Constants.hpp"
+#include "core/Hash.hpp"
 #include "ui/ClipText.hpp"
 #include "ui/Constants.hpp"
 #include "ui/Fuzzy.hpp"
@@ -179,6 +180,13 @@ void MainWindow::build_ui(GtkApplication* application) {
         sigc::mem_fun(*this, &MainWindow::confirm_clear_history));
     adw_header_bar_pack_end(header, GTK_WIDGET(clear_button->gobj()));
 
+    ignore_button_ = Gtk::make_managed<Gtk::Button>();
+    ignore_button_->set_icon_name("media-skip-forward-symbolic");
+    ignore_button_->set_tooltip_text("Ignore the next thing you copy");
+    ignore_button_->signal_clicked().connect(
+        sigc::mem_fun(*this, &MainWindow::toggle_ignore_next_copy));
+    adw_header_bar_pack_end(header, GTK_WIDGET(ignore_button_->gobj()));
+
     capture_button_ = Gtk::make_managed<Gtk::Button>();
     capture_button_->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::toggle_capture));
     adw_header_bar_pack_end(header, GTK_WIDGET(capture_button_->gobj()));
@@ -189,10 +197,37 @@ void MainWindow::build_ui(GtkApplication* application) {
     settings_button->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::open_settings));
     adw_header_bar_pack_start(header, GTK_WIDGET(settings_button->gobj()));
 
+    auto* quit_button = Gtk::make_managed<Gtk::Button>();
+    quit_button->set_icon_name("application-exit-symbolic");
+    quit_button->set_tooltip_text("Quit VoidClip");
+    quit_button->signal_clicked().connect(
+        [this] { g_application_quit(G_APPLICATION(application_)); });
+    adw_header_bar_pack_start(header, GTK_WIDGET(quit_button->gobj()));
+
     adw_toolbar_view_add_top_bar(toolbar, GTK_WIDGET(header));
 
     auto* content = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL, kContentMargin);
     content->set_margin(kContentMargin);
+
+    status_banner_ = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL, kContentMargin);
+    status_banner_->add_css_class("card");
+    status_banner_->set_margin_bottom(kContentMargin);
+    status_label_ = Gtk::make_managed<Gtk::Label>();
+    status_label_->set_hexpand(true);
+    status_label_->set_halign(Gtk::Align::START);
+    status_label_->set_wrap(true);
+    status_banner_->append(*status_label_);
+    status_button_ = Gtk::make_managed<Gtk::Button>("Resume");
+    status_button_->add_css_class("flat");
+    status_button_->signal_clicked().connect([this] {
+        if (ignore_next_copy_armed_) {
+            toggle_ignore_next_copy();
+        } else if (settings_.get().settings().capture_paused) {
+            toggle_capture();
+        }
+    });
+    status_banner_->append(*status_button_);
+    content->append(*status_banner_);
 
     search_ = Gtk::make_managed<Gtk::SearchEntry>();
     search_->set_placeholder_text("Search clipboard history…");
@@ -240,8 +275,17 @@ void MainWindow::build_ui(GtkApplication* application) {
 
     content->append(*stack_);
 
+    auto* help = Gtk::make_managed<Gtk::Label>(
+        "↑↓ Navigate   Enter Copy   Alt+Enter Paste   Ctrl+P Pin   Alt+Delete Delete");
+    help->add_css_class("caption");
+    help->add_css_class("dim-label");
+    help->set_wrap(true);
+    content->append(*help);
+
     adw_toolbar_view_set_content(toolbar, GTK_WIDGET(content->gobj()));
-    adw_application_window_set_content(window_, GTK_WIDGET(toolbar));
+    toast_overlay_ = ADW_TOAST_OVERLAY(adw_toast_overlay_new());
+    adw_toast_overlay_set_child(toast_overlay_, GTK_WIDGET(toolbar));
+    adw_application_window_set_content(window_, GTK_WIDGET(toast_overlay_));
 }
 
 void MainWindow::schedule_refresh() {
@@ -298,8 +342,9 @@ void MainWindow::rebuild_cards() {
         }
         auto* card = Gtk::make_managed<ClipCard>(
             entry, std::move(image), kMaxPreviewChars,
-            [this](const core::ClipboardEntry& clip) { copy(clip); },
-            [this](const core::ClipboardEntry& clip) { pin(clip.content); });
+            [this](const core::ClipboardEntry& clip, ClipAction action) {
+                handle_card_action(clip, action);
+            });
         list_->append(*card);
         cards_.emplace(entry.content, card);
     }
@@ -329,6 +374,13 @@ void MainWindow::apply_filter() {
     if (visible > 0) {
         stack_->set_visible_child(kPageList);
         ensure_selection();
+        // The window can open before the first clip exists, leaving the hidden
+        // search entry without focus. When that first clip arrives, restore the
+        // intended keyboard-first state without stealing focus from another child.
+        if (gtk_widget_get_visible(GTK_WIDGET(window_)) != FALSE &&
+            gtk_window_get_focus(GTK_WINDOW(window_)) == nullptr) {
+            search_->grab_focus();
+        }
         return;
     }
     if (card_count_ == 0) {
@@ -417,7 +469,7 @@ bool MainWindow::on_key_pressed(unsigned int keyval, unsigned int /*keycode*/,
         }
         return true;
     }
-    if (keyval == GDK_KEY_Delete) {
+    if (alt && keyval == GDK_KEY_Delete) {
         remove_selected();
         return true;
     }
@@ -449,9 +501,38 @@ void MainWindow::copy(const core::ClipboardEntry& entry, CopyMode mode) {
         content.text = entry.content;
         content.html = entry.html;
     }
-    // CopyAction handles clipboard + history + auto-paste; the window just hides.
-    if (copy_action_.run(content, mode)) {
+    content.confidential = entry.confidential;
+    const CopyOutcome outcome = copy_action_.run(content, mode);
+    if (outcome == CopyOutcome::Failed) {
+        show_error("Could not copy",
+                   "VoidClip could not place this item on the clipboard. Please try again.");
+    } else if (outcome == CopyOutcome::CopiedHide) {
         gtk_widget_set_visible(GTK_WIDGET(window_), FALSE);
+    } else {
+        show_toast("Copied to clipboard");
+    }
+}
+
+void MainWindow::handle_card_action(const core::ClipboardEntry& entry, ClipAction action) {
+    switch (action) {
+    case ClipAction::FollowSettings:
+        copy(entry);
+        break;
+    case ClipAction::Copy:
+        copy(entry, CopyMode::CopyOnly);
+        break;
+    case ClipAction::Paste:
+        copy(entry, CopyMode::Paste);
+        break;
+    case ClipAction::PastePlainText:
+        copy(entry, CopyMode::PastePlainText);
+        break;
+    case ClipAction::TogglePin:
+        pin(entry.content);
+        break;
+    case ClipAction::Delete:
+        remove(entry);
+        break;
     }
 }
 
@@ -461,8 +542,55 @@ void MainWindow::pin(const std::string& content) {
 
 void MainWindow::remove_selected() {
     if (ClipCard* card = selected_card(); card != nullptr) {
-        history_.get().remove(card->content());
+        remove(card->entry());
     }
+}
+
+void MainWindow::remove(const core::ClipboardEntry& entry) {
+    deleted_content_ = {};
+    deleted_content_.kind = entry.kind;
+    deleted_content_.confidential = entry.confidential;
+    if (entry.kind == core::ClipKind::Image) {
+        deleted_content_.image = history_.get().image(entry.content);
+        deleted_content_.image_width = entry.image_width;
+        deleted_content_.image_height = entry.image_height;
+    } else {
+        deleted_content_.text = entry.content;
+        deleted_content_.html = entry.html;
+    }
+    deleted_was_pinned_ = entry.pinned;
+    history_.get().remove(entry.content);
+
+    if (undo_toast_ != nullptr) {
+        adw_toast_dismiss(undo_toast_);
+    }
+    undo_toast_ = adw_toast_new("Clip deleted");
+    adw_toast_set_button_label(undo_toast_, "Undo");
+    g_signal_connect(undo_toast_, "button-clicked", G_CALLBACK(+[](AdwToast*, gpointer self) {
+                         static_cast<MainWindow*>(self)->undo_delete();
+                     }),
+                     this);
+    g_signal_connect(undo_toast_, "dismissed", G_CALLBACK(+[](AdwToast* toast, gpointer self) {
+                         auto* window = static_cast<MainWindow*>(self);
+                         if (window->undo_toast_ == toast) {
+                             window->undo_toast_ = nullptr;
+                         }
+                     }),
+                     this);
+    adw_toast_overlay_add_toast(toast_overlay_, undo_toast_);
+}
+
+void MainWindow::undo_delete() {
+    if (undo_toast_ == nullptr || !history_.get().add(deleted_content_)) {
+        return;
+    }
+    const std::string key = deleted_content_.kind == core::ClipKind::Image
+                                ? core::content_hash(deleted_content_.image)
+                                : deleted_content_.text;
+    if (deleted_was_pinned_) {
+        history_.get().toggle_pin(key);
+    }
+    undo_toast_ = nullptr;
 }
 
 void MainWindow::clear_history() {
@@ -502,6 +630,11 @@ void MainWindow::toggle_capture() {
     refresh_capture_button();
 }
 
+void MainWindow::toggle_ignore_next_copy() {
+    ignore_next_copy_armed_ = !ignore_next_copy_armed_;
+    refresh_status_banner();
+}
+
 void MainWindow::refresh_capture_button() {
     if (capture_button_ == nullptr) {
         return;
@@ -516,6 +649,55 @@ void MainWindow::refresh_capture_button() {
     } else {
         capture_button_->remove_css_class("warning");
     }
+    refresh_status_banner();
+}
+
+void MainWindow::refresh_status_banner() {
+    if (status_banner_ == nullptr) {
+        return;
+    }
+    if (ignore_next_copy_armed_) {
+        status_label_->set_text("The next thing you copy will not be saved");
+        status_button_->set_label("Cancel");
+        status_banner_->set_visible(true);
+    } else if (settings_.get().settings().capture_paused) {
+        status_label_->set_text("Clipboard recording is paused");
+        status_button_->set_label("Resume");
+        status_banner_->set_visible(true);
+    } else {
+        status_banner_->set_visible(false);
+    }
+    if (ignore_button_ != nullptr) {
+        if (ignore_next_copy_armed_) {
+            ignore_button_->add_css_class("accent");
+        } else {
+            ignore_button_->remove_css_class("accent");
+        }
+    }
+}
+
+void MainWindow::show_toast(const std::string& message) {
+    adw_toast_overlay_add_toast(toast_overlay_, adw_toast_new(message.c_str()));
+}
+
+void MainWindow::handle_clipboard_change(const core::ClipContent& content) {
+    if (settings_.get().settings().capture_paused) {
+        return;
+    }
+    if (ignore_next_copy_armed_) {
+        ignore_next_copy_armed_ = false;
+        refresh_status_banner();
+        show_toast("Clipboard item ignored");
+        return;
+    }
+    if (content.confidential && !settings_.get().settings().save_confidential_clips) {
+        return;
+    }
+    if (core::HistoryService::is_oversized(content)) {
+        show_toast("Item is too large to save in history");
+        return;
+    }
+    history_.get().add(content);
 }
 
 void MainWindow::open_settings() {
@@ -565,6 +747,9 @@ void MainWindow::toggle() {
 
 void MainWindow::present() {
     refresh_capture_button();
+    if (!search_->get_text().empty()) {
+        search_->set_text("");
+    }
     gtk_window_present(GTK_WINDOW(window_));
     // Start on the search field (type to filter); never leave a header button
     // showing the focus ring.

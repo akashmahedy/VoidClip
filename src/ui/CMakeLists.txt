@@ -23,6 +23,7 @@ target_link_libraries(voidclip_ui_text PRIVATE voidclip::warnings voidclip::sani
 add_library(
   voidclip_ui STATIC
   Theme.cpp
+  Autostart.cpp
   MainWindow.cpp
   Application.cpp
   GdkClipboardSource.cpp
@@ -42,7 +43,7 @@ target_include_directories(voidclip_ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_link_libraries(voidclip_ui PUBLIC voidclip::core PkgConfig::GTKMM PkgConfig::ADWAITA)
 target_link_libraries(voidclip_ui PRIVATE voidclip::ui_text spdlog::spdlog voidclip::warnings
-                                          voidclip::sanitizers)
+                                          voidclip::sanitizers voidclip::config)
 
 # The windowed application.
 add_executable(voidclip-gtk main.cpp)

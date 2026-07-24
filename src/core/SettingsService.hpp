@@ -31,9 +31,8 @@ public:
 
     [[nodiscard]] bool is_first_run() const;
 
-    // Record the chosen shortcut (a GTK accelerator) and mark the first run
-    // complete (persisted).
-    void complete_first_run(const std::string& accelerator);
+    // Persist the choices made during onboarding and mark first run complete.
+    void complete_first_run(const Settings& choices);
 
 private:
     std::reference_wrapper<SettingsRepository> repository_;

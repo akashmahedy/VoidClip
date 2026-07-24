@@ -48,15 +48,17 @@ TEST(ModelsTest, DisplayNameUppercasesMultiCharacterKey) {
 // max_history_items bound to the shared config constant.
 TEST(ModelsTest, SettingsHaveReferenceDefaults) {
     const core::Settings settings{};
-    EXPECT_EQ(settings.theme, core::Theme::Dark);
+    EXPECT_EQ(settings.theme, core::Theme::System);
     EXPECT_EQ(settings.hotkey, config::kDefaultHotkeyAccelerator);
     EXPECT_FALSE(settings.first_run_completed);
     EXPECT_EQ(settings.max_history_items, config::kDefaultMaxHistoryItems);
     EXPECT_EQ(settings.max_history_items, 70);
     EXPECT_TRUE(settings.auto_hide_on_copy);
-    EXPECT_FALSE(settings.auto_paste);
+    EXPECT_TRUE(settings.auto_paste);
     EXPECT_FALSE(settings.capture_paused);
     EXPECT_TRUE(settings.show_panel_icon);
+    EXPECT_FALSE(settings.save_confidential_clips);
+    EXPECT_TRUE(settings.start_at_login);
 }
 
 } // namespace

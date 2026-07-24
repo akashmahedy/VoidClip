@@ -18,20 +18,30 @@
 #include <glibmm/refptr.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
 
 namespace voidclip::ui {
 
+enum class ClipAction : std::uint8_t {
+    FollowSettings,
+    Copy,
+    Paste,
+    PastePlainText,
+    TogglePin,
+    Delete,
+};
+
 class ClipCard : public Gtk::ListBoxRow {
 public:
-    using ActionCallback = std::function<void(const core::ClipboardEntry&)>;
+    using ActionCallback = std::function<void(const core::ClipboardEntry&, ClipAction)>;
 
     // `image` holds the PNG bytes for an image entry (empty otherwise); the window
     // fetches them lazily so the card doesn't reach into storage itself.
     ClipCard(const core::ClipboardEntry& entry, std::vector<std::byte> image, std::size_t max_chars,
-             ActionCallback on_copy, ActionCallback on_pin);
+             ActionCallback on_action);
 
     // The entry's dedup key (its text, or an image hash) — the window filters on it.
     [[nodiscard]] const std::string& content() const { return entry_.content; }
@@ -44,15 +54,16 @@ private:
     void render_text();
     void toggle_expand();
     void on_pressed(int n_press, double x, double y);
+    void dispatch(ClipAction action);
 
     core::ClipboardEntry entry_;
     std::size_t max_chars_;
     bool expanded_ = false;
     Gtk::Label* content_label_ = nullptr;  // null for image cards
     Gtk::Button* toggle_button_ = nullptr; // null for image cards
+    Gtk::Box* actions_ = nullptr;
     Glib::RefPtr<Gtk::GestureClick> gesture_;
-    ActionCallback on_copy_;
-    ActionCallback on_pin_;
+    ActionCallback on_action_;
 };
 
 } // namespace voidclip::ui

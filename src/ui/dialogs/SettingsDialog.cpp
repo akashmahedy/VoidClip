@@ -1,12 +1,17 @@
 #include "ui/dialogs/SettingsDialog.hpp"
 
+#include "config/Constants.hpp"
 #include "core/Enums.hpp"
 #include "core/Models.hpp"
+#include "ui/Autostart.hpp"
 #include "ui/Constants.hpp"
 #include "ui/DesktopShortcut.hpp"
 #include "ui/GnomeShortcut.hpp"
 
 #include <adwaita.h>
+
+#include <giomm/appinfo.h>
+#include <glibmm/error.h>
 
 #include <spdlog/spdlog.h>
 
@@ -69,15 +74,15 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
                                PanelIconChangedCallback on_panel_icon_changed,
                                ClosedCallback on_closed)
     : settings_{settings}, history_{history}, on_theme_changed_{std::move(on_theme_changed)},
-      on_panel_icon_changed_{std::move(on_panel_icon_changed)}, on_closed_{std::move(on_closed)} {
+      on_panel_icon_changed_{std::move(on_panel_icon_changed)}, on_closed_{std::move(on_closed)},
+      dialog_{adw_dialog_new()} {
     const core::Settings& current = settings.settings();
 
     // A plain AdwDialog (not AdwPreferencesDialog) so it presents as a bottom sheet
     // like the welcome dialog, instead of floating centered.
-    AdwDialog* dialog = adw_dialog_new();
-    adw_dialog_set_title(dialog, "Settings");
-    adw_dialog_set_content_width(dialog, kDialogContentWidth);
-    adw_dialog_set_presentation_mode(dialog, ADW_DIALOG_BOTTOM_SHEET);
+    adw_dialog_set_title(dialog_, "Settings");
+    adw_dialog_set_content_width(dialog_, kDialogContentWidth);
+    adw_dialog_set_presentation_mode(dialog_, ADW_DIALOG_BOTTOM_SHEET);
     auto* page = ADW_PREFERENCES_PAGE(adw_preferences_page_new());
 
     AdwComboRow* theme_row = add_combo_row(add_group(page, "Appearance"), "Theme");
@@ -102,7 +107,7 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     // Free-form shortcut capture plus preset quick-picks; applies on change.
     shortcut_chooser_ = std::make_unique<ShortcutChooser>(
         parent, shortcut_group, current.hotkey,
-        [this](const std::string& accelerator) { apply_accelerator(accelerator); });
+        [this](const std::string& accelerator) { return apply_accelerator(accelerator); });
 
     AdwPreferencesGroup* behaviour_group = add_group(page, "Behaviour");
 
@@ -144,6 +149,19 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
                      G_CALLBACK(&SettingsDialog::on_panel_icon_toggled), this);
 
     AdwPreferencesGroup* history_group = add_group(page, "History");
+
+    auto* confidential_row = ADW_SWITCH_ROW(adw_switch_row_new());
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(confidential_row),
+                                  "Save password-manager clips");
+    adw_action_row_set_subtitle(
+        ADW_ACTION_ROW(confidential_row),
+        "Stores confidential clipboard items locally until you delete them");
+    adw_switch_row_set_active(confidential_row,
+                              static_cast<gboolean>(current.save_confidential_clips));
+    adw_preferences_group_add(history_group, GTK_WIDGET(confidential_row));
+    g_signal_connect(confidential_row, "notify::active",
+                     G_CALLBACK(&SettingsDialog::on_confidential_toggled), this);
+
     auto* history_limit_row =
         ADW_SPIN_ROW(adw_spin_row_new_with_range(kHistoryMinimum, kHistoryMaximum, kHistoryStep));
     adw_preferences_row_set_title(ADW_PREFERENCES_ROW(history_limit_row), "Maximum items");
@@ -154,12 +172,43 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     g_signal_connect(history_limit_row, "notify::value",
                      G_CALLBACK(&SettingsDialog::on_history_limit_changed), this);
 
+    AdwPreferencesGroup* system_group = add_group(page, "System");
+    auto* startup_row = ADW_SWITCH_ROW(adw_switch_row_new());
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(startup_row), "Start when I sign in");
+    adw_action_row_set_subtitle(ADW_ACTION_ROW(startup_row), "Keep VoidClip ready after a restart");
+    adw_switch_row_set_active(startup_row, static_cast<gboolean>(current.start_at_login));
+    adw_preferences_group_add(system_group, GTK_WIDGET(startup_row));
+    g_signal_connect(startup_row, "notify::active", G_CALLBACK(&SettingsDialog::on_startup_toggled),
+                     this);
+
+    auto* releases_row = ADW_ACTION_ROW(adw_action_row_new());
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(releases_row), "Check for updates");
+    const std::string version = "Installed version " + std::string{config::kAppVersion};
+    adw_action_row_set_subtitle(releases_row, version.c_str());
+    GtkWidget* releases_button = gtk_button_new_with_label("Open Releases");
+    gtk_widget_set_valign(releases_button, GTK_ALIGN_CENTER);
+    gtk_widget_add_css_class(releases_button, "flat");
+    g_signal_connect(releases_button, "clicked", G_CALLBACK(+[](GtkButton*, gpointer self) {
+                         try {
+                             Gio::AppInfo::launch_default_for_uri(
+                                 "https://github.com/akashmahedy/VoidClip/releases");
+                         } catch (const Glib::Error& error) {
+                             spdlog::warn("could not open the releases page: {}", error.what());
+                             static_cast<SettingsDialog*>(self)->show_error(
+                                 "Could not open the releases page",
+                                 "Open github.com/akashmahedy/VoidClip/releases in your browser.");
+                         }
+                     }),
+                     this);
+    adw_action_row_add_suffix(releases_row, releases_button);
+    adw_preferences_group_add(system_group, GTK_WIDGET(releases_row));
+
     GtkWidget* toolbar = adw_toolbar_view_new();
     adw_toolbar_view_add_top_bar(ADW_TOOLBAR_VIEW(toolbar), adw_header_bar_new());
     adw_toolbar_view_set_content(ADW_TOOLBAR_VIEW(toolbar), GTK_WIDGET(page));
-    adw_dialog_set_child(dialog, toolbar);
-    g_signal_connect(dialog, "closed", G_CALLBACK(&SettingsDialog::on_dialog_closed), this);
-    adw_dialog_present(dialog, parent);
+    adw_dialog_set_child(dialog_, toolbar);
+    g_signal_connect(dialog_, "closed", G_CALLBACK(&SettingsDialog::on_dialog_closed), this);
+    adw_dialog_present(dialog_, parent);
 }
 
 void SettingsDialog::on_dialog_closed(AdwDialog* /*dialog*/, gpointer self) {
@@ -171,14 +220,20 @@ void SettingsDialog::on_theme_selected(GObject* row, GParamSpec* /*spec*/, gpoin
 }
 
 void SettingsDialog::on_shortcut_toggled(GObject* row, GParamSpec* /*spec*/, gpointer self) {
-    static_cast<SettingsDialog*>(self)->apply_shortcut_enabled(
-        adw_switch_row_get_active(ADW_SWITCH_ROW(row)) != FALSE);
+    auto* dialog = static_cast<SettingsDialog*>(self);
+    if (dialog->suppress_shortcut_) {
+        return;
+    }
+    static_cast<void>(
+        dialog->apply_shortcut_enabled(adw_switch_row_get_active(ADW_SWITCH_ROW(row)) != FALSE));
     // Registration can fail (e.g. off GNOME); make the switch reflect what actually
     // happened rather than the user's intent, so it can't show "on" while unbound.
-    const core::Settings& current = static_cast<SettingsDialog*>(self)->settings_.get().settings();
+    const core::Settings& current = dialog->settings_.get().settings();
+    dialog->suppress_shortcut_ = true;
     adw_switch_row_set_active(
         ADW_SWITCH_ROW(row),
         is_desktop_shortcut_registered(executable_path(), current.hotkey) ? TRUE : FALSE);
+    dialog->suppress_shortcut_ = false;
 }
 
 void SettingsDialog::on_auto_hide_toggled(GObject* row, GParamSpec* /*spec*/, gpointer self) {
@@ -193,26 +248,34 @@ void SettingsDialog::apply_theme(unsigned int index) {
     on_theme_changed_();
 }
 
-void SettingsDialog::apply_accelerator(const std::string& accelerator) {
+bool SettingsDialog::apply_accelerator(const std::string& accelerator) {
     core::Settings updated = settings_.get().settings();
     const std::string previous = updated.hotkey;
     if (is_desktop_shortcut_registered(executable_path(), previous) &&
         !rebind_desktop_shortcut(executable_path(), previous, accelerator)) {
         spdlog::warn("global shortcut could not be rebound to {}", accelerator);
-        return;
+        show_error(
+            "Shortcut was not changed",
+            "That shortcut could not be registered. Your previous shortcut is still active.");
+        return false;
     }
     updated.hotkey = accelerator;
     settings_.get().update(updated);
+    return true;
 }
 
-void SettingsDialog::apply_shortcut_enabled(bool active) {
+bool SettingsDialog::apply_shortcut_enabled(bool active) {
     const std::string command = executable_path();
     const std::string accelerator = settings_.get().settings().hotkey;
     const bool ok = active ? register_desktop_shortcut(command, accelerator)
                            : unregister_desktop_shortcut(command, accelerator);
     if (!ok) {
         spdlog::warn("global shortcut could not be {}", active ? "registered" : "removed");
+        show_error(active ? "Shortcut was not enabled" : "Shortcut was not disabled",
+                   "VoidClip could not change the desktop shortcut. Try another shortcut or "
+                   "check your desktop keyboard settings.");
     }
+    return ok;
 }
 
 void SettingsDialog::apply_auto_hide(bool active) {
@@ -265,6 +328,50 @@ void SettingsDialog::apply_panel_icon(bool active) {
     updated.show_panel_icon = active;
     settings_.get().update(updated);
     on_panel_icon_changed_(); // let the window add/remove the tray icon live
+}
+
+void SettingsDialog::on_confidential_toggled(GObject* row, GParamSpec* /*spec*/, gpointer self) {
+    static_cast<SettingsDialog*>(self)->apply_confidential(
+        adw_switch_row_get_active(ADW_SWITCH_ROW(row)) != FALSE);
+}
+
+void SettingsDialog::apply_confidential(bool active) {
+    core::Settings updated = settings_.get().settings();
+    updated.save_confidential_clips = active;
+    settings_.get().update(updated);
+}
+
+void SettingsDialog::on_startup_toggled(GObject* row, GParamSpec* /*spec*/, gpointer self) {
+    auto* dialog = static_cast<SettingsDialog*>(self);
+    if (dialog->suppress_startup_) {
+        return;
+    }
+    const bool requested = adw_switch_row_get_active(ADW_SWITCH_ROW(row)) != FALSE;
+    if (!dialog->apply_startup(requested)) {
+        dialog->suppress_startup_ = true;
+        adw_switch_row_set_active(ADW_SWITCH_ROW(row), requested ? FALSE : TRUE);
+        dialog->suppress_startup_ = false;
+    }
+}
+
+bool SettingsDialog::apply_startup(bool active) {
+    if (!set_start_at_login(active, executable_path())) {
+        show_error("Startup setting was not changed",
+                   "VoidClip could not update your sign-in startup setting.");
+        return false;
+    }
+    core::Settings updated = settings_.get().settings();
+    updated.start_at_login = active;
+    settings_.get().update(updated);
+    return true;
+}
+
+void SettingsDialog::show_error(const std::string& heading, const std::string& body) {
+    auto* alert = ADW_ALERT_DIALOG(adw_alert_dialog_new(heading.c_str(), body.c_str()));
+    adw_alert_dialog_add_response(alert, "ok", "OK");
+    adw_alert_dialog_set_default_response(alert, "ok");
+    adw_alert_dialog_set_close_response(alert, "ok");
+    adw_dialog_present(ADW_DIALOG(alert), GTK_WIDGET(dialog_));
 }
 
 } // namespace voidclip::ui

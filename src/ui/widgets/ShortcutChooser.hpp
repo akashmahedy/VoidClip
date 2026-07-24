@@ -17,7 +17,7 @@ namespace voidclip::ui {
 class ShortcutChooser {
 public:
     // Called with the new GTK accelerator (e.g. "<Super>v") whenever it changes.
-    using AcceleratorCallback = std::function<void(const std::string&)>;
+    using AcceleratorCallback = std::function<bool(const std::string&)>;
 
     // Builds the combo row into `group`; `parent` is the widget capture sheets are
     // presented on. `initial` is the accelerator shown at first.

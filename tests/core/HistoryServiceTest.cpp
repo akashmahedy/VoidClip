@@ -284,6 +284,16 @@ TEST(HistoryServiceTest, AddingRichTextKeepsHtml) {
     EXPECT_EQ(entries.front().html, "<b>hi</b>");
 }
 
+TEST(HistoryServiceTest, ConfidentialFlagIsPreserved) {
+    ServiceHarness harness;
+    harness.service.add(
+        core::ClipContent{.kind = core::ClipKind::Text, .text = "password", .confidential = true});
+
+    const auto entries = harness.service.entries();
+    ASSERT_EQ(entries.size(), 1U);
+    EXPECT_TRUE(entries.front().confidential);
+}
+
 TEST(HistoryServiceTest, RichTextReplacesPlainTextWithTheSameVisibleContent) {
     ServiceHarness harness;
     harness.service.add("hi");

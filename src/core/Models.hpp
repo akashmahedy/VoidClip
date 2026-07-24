@@ -39,6 +39,9 @@ struct ClipboardEntry {
     int image_height = 0;
     std::chrono::system_clock::time_point created_at{};
     bool pinned = false;
+    // Password managers can label clipboard contents as confidential. The flag is
+    // retained only when the user has explicitly enabled saving those clips.
+    bool confidential = false;
 };
 
 // Transient clipboard content as read from or written to the clipboard, before
@@ -51,6 +54,7 @@ struct ClipContent {
     std::vector<std::byte> image{};
     int image_width = 0;
     int image_height = 0;
+    bool confidential = false;
 };
 // NOLINTEND(readability-redundant-member-init)
 
@@ -74,19 +78,25 @@ struct HotkeySpec {
 
 // User-configurable settings; defaults match the reference.
 struct Settings {
-    Theme theme = Theme::Dark;
+    Theme theme = Theme::System;
     // GTK accelerator for the open shortcut (e.g. "<Super>v"); free-form, so a
     // string rather than the preset enum. Presets remain as UI quick-picks.
     std::string hotkey{config::kDefaultHotkeyAccelerator};
     bool first_run_completed = false;
     int max_history_items = config::kDefaultMaxHistoryItems;
     bool auto_hide_on_copy = true;
-    bool auto_paste = false;
+    // Selecting a clip should do what a non-technical user expects: return it to
+    // the application they came from. First run explains and lets them disable it.
+    bool auto_paste = true;
     // When paused, clipboard changes are ignored until the user resumes capture.
     // Persisting the choice prevents a privacy-sensitive pause from silently
     // turning itself off after a restart.
     bool capture_paused = false;
     bool show_panel_icon = true;
+    // Deliberately opt-in: when enabled, clips carrying the password-manager
+    // confidential hint are stored in the local history like any other text.
+    bool save_confidential_clips = false;
+    bool start_at_login = true;
 };
 
 } // namespace voidclip::core

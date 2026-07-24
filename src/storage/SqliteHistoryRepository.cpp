@@ -36,7 +36,8 @@ constexpr const char* kSchema = "CREATE TABLE IF NOT EXISTS entries ("
                                 "image_width  INTEGER NOT NULL DEFAULT 0, "
                                 "image_height INTEGER NOT NULL DEFAULT 0, "
                                 "created_at   TEXT NOT NULL, "
-                                "pinned       INTEGER NOT NULL DEFAULT 0)";
+                                "pinned       INTEGER NOT NULL DEFAULT 0, "
+                                "confidential INTEGER NOT NULL DEFAULT 0)";
 constexpr const char* kSchemaImages =
     "CREATE TABLE IF NOT EXISTS images (hash TEXT PRIMARY KEY, png BLOB NOT NULL)";
 constexpr const char* kSchemaMetadata =
@@ -90,8 +91,8 @@ void restrict_database_files(const std::filesystem::path& db_path) {
 
 constexpr const char* kInsertOrReplace =
     "INSERT OR REPLACE INTO entries "
-    "(content, kind, html, image_width, image_height, created_at, pinned) "
-    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+    "(content, kind, html, image_width, image_height, created_at, pinned, confidential) "
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 constexpr const char* kInsertImage = "INSERT OR REPLACE INTO images (hash, png) VALUES (?, ?)";
 constexpr const char* kSelectImage = "SELECT png FROM images WHERE hash = ?";
 constexpr const char* kDeleteByContent = "DELETE FROM entries WHERE content = ?";
@@ -102,7 +103,8 @@ constexpr const char* kDeleteUnpinned = "DELETE FROM entries WHERE pinned = 0";
 constexpr const char* kDeleteUnpinnedImages =
     "DELETE FROM images WHERE hash IN (SELECT content FROM entries WHERE pinned = 0)";
 constexpr const char* kSelectAll =
-    "SELECT content, kind, html, image_width, image_height, created_at, pinned FROM entries";
+    "SELECT content, kind, html, image_width, image_height, created_at, pinned, confidential "
+    "FROM entries";
 
 // Column ordinals for the kSelectAll projection, named to avoid bare indices.
 constexpr int kColContent = 0;
@@ -112,6 +114,7 @@ constexpr int kColImageWidth = 3;
 constexpr int kColImageHeight = 4;
 constexpr int kColCreatedAt = 5;
 constexpr int kColPinned = 6;
+constexpr int kColConfidential = 7;
 constexpr int kColImagePng = 0;      // kSelectImage projection
 constexpr int kColMetadataValue = 0; // kSelectOwner projection
 constexpr int kPragmaNameColumn = 1; // PRAGMA table_info: column 1 is the name
@@ -124,6 +127,7 @@ constexpr int kParamFourth = 4;
 constexpr int kParamFifth = 5;
 constexpr int kParamSixth = 6;
 constexpr int kParamSeventh = 7;
+constexpr int kParamEighth = 8;
 
 // Pinned is persisted as a SQLite INTEGER: 1 for pinned, 0 otherwise.
 constexpr int kPinnedTrue = 1;
@@ -371,6 +375,7 @@ SqliteHistoryRepository::SqliteHistoryRepository(const std::filesystem::path& db
     add_column_if_missing(database_, "html", "TEXT NOT NULL DEFAULT ''");
     add_column_if_missing(database_, "image_width", "INTEGER NOT NULL DEFAULT 0");
     add_column_if_missing(database_, "image_height", "INTEGER NOT NULL DEFAULT 0");
+    add_column_if_missing(database_, "confidential", "INTEGER NOT NULL DEFAULT 0");
 }
 
 void SqliteHistoryRepository::add(const core::ClipboardEntry& entry) {
@@ -382,6 +387,7 @@ void SqliteHistoryRepository::add(const core::ClipboardEntry& entry) {
     statement.bind(kParamFifth, entry.image_height);
     statement.bind(kParamSixth, format_iso8601(entry.created_at));
     statement.bind(kParamSeventh, entry.pinned ? kPinnedTrue : kPinnedFalse);
+    statement.bind(kParamEighth, entry.confidential ? 1 : 0);
     statement.exec();
 
     if (entry.kind == core::ClipKind::Image && !entry.image.empty()) {
@@ -440,7 +446,8 @@ std::vector<core::ClipboardEntry> SqliteHistoryRepository::all() const {
             .image_width = statement.getColumn(kColImageWidth).getInt(),
             .image_height = statement.getColumn(kColImageHeight).getInt(),
             .created_at = *created_at,
-            .pinned = statement.getColumn(kColPinned).getInt() != kPinnedFalse});
+            .pinned = statement.getColumn(kColPinned).getInt() != kPinnedFalse,
+            .confidential = statement.getColumn(kColConfidential).getInt() != 0});
     }
     return entries;
 }

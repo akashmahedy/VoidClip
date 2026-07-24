@@ -270,9 +270,12 @@ void ShortcutChooser::apply(const std::string& accelerator) {
     if (accelerator == accelerator_) {
         return; // no change — skip the rebuild so a reselection can never cycle
     }
+    if (!on_changed_(accelerator)) {
+        rebuild();
+        return;
+    }
     accelerator_ = accelerator;
     rebuild();
-    on_changed_(accelerator_);
 }
 
 } // namespace voidclip::ui

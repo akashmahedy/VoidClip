@@ -66,6 +66,14 @@ std::filesystem::path settings_file() {
     return data_dir() / kSettingsFileName;
 }
 
+std::filesystem::path autostart_file() {
+    const std::string xdg = env_or(kXdgConfigHomeEnv.data(), "");
+    const std::filesystem::path base = xdg.empty()
+                                           ? std::filesystem::path{home_dir()} / kConfigSubdir
+                                           : std::filesystem::path{xdg};
+    return base / kAutostartSubdir / kAutostartFileName;
+}
+
 std::filesystem::path runtime_dir() {
     return std::filesystem::path{env_or(kXdgRuntimeDirEnv.data(), kRuntimeDirFallback)};
 }
