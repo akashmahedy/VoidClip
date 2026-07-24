@@ -65,8 +65,7 @@ bool is_desktop_shortcut_registered(const std::string& command, const std::strin
                              : is_gnome_shortcut_registered();
 }
 
-bool migrate_legacy_desktop_shortcut(const std::string& command,
-                                     const std::string& accelerator) {
+bool migrate_legacy_desktop_shortcut(const std::string& command, const std::string& accelerator) {
     return is_xfce_session() ? migrate_legacy_xfce_shortcut({command, accelerator})
                              : migrate_legacy_gnome_shortcut(command, accelerator);
 }

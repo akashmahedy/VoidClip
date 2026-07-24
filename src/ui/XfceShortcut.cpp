@@ -124,8 +124,7 @@ bool migrate_legacy_xfce_shortcut(const XfceShortcutBinding& binding) {
     if (executable.filename() != "copyclip") {
         return false;
     }
-    return run_xfconf(
-        {"-c", kChannel, "-p", property, "-s", std::string{binding.command}});
+    return run_xfconf({"-c", kChannel, "-p", property, "-s", std::string{binding.command}});
 }
 
 } // namespace voidclip::ui

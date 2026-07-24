@@ -7,8 +7,8 @@
 
 namespace {
 
-using voidclip::ui::desktop_is_xfce;
 using voidclip::test::ScopedEnv;
+using voidclip::ui::desktop_is_xfce;
 
 TEST(DesktopShortcutTest, RecognizesCommonXfceDesktopNames) {
     EXPECT_TRUE(desktop_is_xfce("XFCE"));

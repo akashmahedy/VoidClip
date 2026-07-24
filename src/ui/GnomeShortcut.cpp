@@ -83,8 +83,7 @@ std::string executable_path() {
     // AppImage mounts itself under /tmp/.mount_*; /proc/self/exe therefore
     // points at an ephemeral path. APPIMAGE is the launcher-provided absolute
     // path to the original file and survives reboots.
-    if (const char* appimage = std::getenv("APPIMAGE");
-        appimage != nullptr && *appimage != '\0') {
+    if (const char* appimage = std::getenv("APPIMAGE"); appimage != nullptr && *appimage != '\0') {
         const std::filesystem::path original{appimage};
         if (original.is_absolute()) {
             return original.string();
@@ -142,8 +141,7 @@ bool is_gnome_shortcut_registered() {
     return std::find(paths.begin(), paths.end(), kKeybindingPath) != paths.end();
 }
 
-bool migrate_legacy_gnome_shortcut(const std::string& command,
-                                   const std::string& accelerator) {
+bool migrate_legacy_gnome_shortcut(const std::string& command, const std::string& accelerator) {
     if (!gsettings_available()) {
         return false;
     }

@@ -484,14 +484,13 @@ void MainWindow::confirm_clear_history() {
     adw_alert_dialog_set_default_response(dialog, "cancel");
     adw_alert_dialog_set_close_response(dialog, "cancel");
     adw_alert_dialog_set_response_appearance(dialog, "clear", ADW_RESPONSE_DESTRUCTIVE);
-    g_signal_connect(
-        dialog, "response",
-        G_CALLBACK(+[](AdwAlertDialog*, const char* response, gpointer self) {
-            if (std::string_view{response} == "clear") {
-                static_cast<MainWindow*>(self)->clear_history();
-            }
-        }),
-        this);
+    g_signal_connect(dialog, "response",
+                     G_CALLBACK(+[](AdwAlertDialog*, const char* response, gpointer self) {
+                         if (std::string_view{response} == "clear") {
+                             static_cast<MainWindow*>(self)->clear_history();
+                         }
+                     }),
+                     this);
     adw_dialog_present(ADW_DIALOG(dialog), GTK_WIDGET(window_));
 }
 

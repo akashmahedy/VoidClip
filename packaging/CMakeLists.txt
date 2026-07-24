@@ -18,7 +18,7 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/io.github.akashmahedy.VoidClip.deskto
 # A system XDG autostart entry makes direct DEB/RPM installs behave like the
 # installer-script path. A same-named per-user entry can still override it.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/io.github.akashmahedy.VoidClip-autostart.desktop"
-        DESTINATION "${CMAKE_INSTALL_FULL_SYSCONFDIR}/xdg/autostart")
+        DESTINATION "../etc/xdg/autostart")
 
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/icons/io.github.akashmahedy.VoidClip.svg"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps")
@@ -41,7 +41,6 @@ set(CPACK_PACKAGE_CONTACT "akashmahedy <akashmahedy@users.noreply.github.com>")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 set(CPACK_STRIP_FILES ON)
 set(CPACK_PACKAGE_RELOCATABLE OFF)
-set(CPACK_SET_DESTDIR ON)
 
 # Base name used by the archive generators; .deb/.rpm override it below with their
 # own conventions (voidclip-<ver>-<arch>.tar.gz).

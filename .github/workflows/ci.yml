@@ -108,6 +108,8 @@ jobs:
           desktop-file-validate packaging/io.github.akashmahedy.VoidClip-autostart.desktop
           (cd build/release && cpack -G DEB)
           sudo apt-get install -y ./build/release/*.deb
+          test -x /usr/bin/voidclip
+          test -f /etc/xdg/autostart/io.github.akashmahedy.VoidClip-autostart.desktop
 
       - name: Packaged GTK smoke (Xvfb + D-Bus)
         run: ./scripts/gtk-smoke.sh /usr/bin/voidclip

@@ -187,12 +187,11 @@ void KeystrokePaster::paste(FinishedCallback on_finished) const {
         if (!success) {
             logger->warn("auto-paste: no working input method; clip left on the clipboard");
         }
-        Glib::signal_idle().connect_once(
-            [on_finished = std::move(on_finished), success]() mutable {
-                if (on_finished) {
-                    on_finished(success);
-                }
-            });
+        Glib::signal_idle().connect_once([on_finished = std::move(on_finished), success]() mutable {
+            if (on_finished) {
+                on_finished(success);
+            }
+        });
     }).detach();
 }
 
