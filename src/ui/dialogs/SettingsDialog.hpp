@@ -64,7 +64,7 @@ private:
     void check_for_updates();
     void apply_update_check(UpdateCheckResult result);
     void install_update();
-    void apply_update_install(UpdateInstallResult result);
+    void apply_update_install(const UpdateInstallResult& result);
     void open_release_page();
     void set_update_row(const std::string& title, const std::string& subtitle,
                         const std::string& button_label, bool button_sensitive);

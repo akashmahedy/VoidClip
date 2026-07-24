@@ -32,8 +32,9 @@ constexpr std::string_view kReleaseDownloadPrefix =
     "https://github.com/akashmahedy/VoidClip/releases/download/";
 constexpr std::string_view kPackageName = "voidclip";
 constexpr std::string_view kApiVersion = "2022-11-28";
-constexpr std::uintmax_t kMaximumPackageBytes = 100U * 1024U * 1024U;
-constexpr std::uintmax_t kMaximumManifestBytes = 1024U * 1024U;
+constexpr std::uintmax_t kMaximumPackageBytes =
+    std::uintmax_t{100} * std::uintmax_t{1024} * std::uintmax_t{1024};
+constexpr std::uintmax_t kMaximumManifestBytes = std::uintmax_t{1024} * std::uintmax_t{1024};
 
 struct Architecture {
     std::string release;
@@ -261,7 +262,7 @@ UpdateCheckResult check_release_json(std::string_view release_json,
     nlohmann::json release;
     try {
         release = nlohmann::json::parse(release_json);
-        if (!release.is_object() || !release.value("draft", true) ||
+        if (!release.is_object() || release.value("draft", true) ||
             release.value("prerelease", true)) {
             return check_error("GitHub did not return a stable VoidClip release.");
         }

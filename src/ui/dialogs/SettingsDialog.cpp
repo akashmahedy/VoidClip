@@ -78,7 +78,8 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
                                ClosedCallback on_closed)
     : settings_{settings}, history_{history}, on_theme_changed_{std::move(on_theme_changed)},
       on_panel_icon_changed_{std::move(on_panel_icon_changed)}, on_closed_{std::move(on_closed)},
-      dialog_{adw_dialog_new()} {
+      dialog_{adw_dialog_new()}, update_row_{ADW_ACTION_ROW(adw_action_row_new())},
+      update_button_{GTK_BUTTON(gtk_button_new_with_label("Checking…"))} {
     const core::Settings& current = settings.settings();
 
     // A plain AdwDialog (not AdwPreferencesDialog) so it presents as a bottom sheet
@@ -184,11 +185,9 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     g_signal_connect(startup_row, "notify::active", G_CALLBACK(&SettingsDialog::on_startup_toggled),
                      this);
 
-    update_row_ = ADW_ACTION_ROW(adw_action_row_new());
     adw_preferences_row_set_title(ADW_PREFERENCES_ROW(update_row_), "Checking for updates…");
     const std::string version = "Installed version " + std::string{config::kAppVersion};
     adw_action_row_set_subtitle(update_row_, version.c_str());
-    update_button_ = GTK_BUTTON(gtk_button_new_with_label("Checking…"));
     gtk_widget_set_valign(GTK_WIDGET(update_button_), GTK_ALIGN_CENTER);
     gtk_widget_add_css_class(GTK_WIDGET(update_button_), "flat");
     gtk_widget_set_sensitive(GTK_WIDGET(update_button_), FALSE);
@@ -454,15 +453,15 @@ void SettingsDialog::install_update() {
     const std::shared_ptr<AsyncState> state = async_state_;
     std::thread([state, self = this, release] {
         UpdateInstallResult result = install_deb_update(release);
-        Glib::signal_idle().connect_once([state, self, result = std::move(result)]() mutable {
+        Glib::signal_idle().connect_once([state, self, result = std::move(result)] {
             if (state->alive.load()) {
-                self->apply_update_install(std::move(result));
+                self->apply_update_install(result);
             }
         });
     }).detach();
 }
 
-void SettingsDialog::apply_update_install(UpdateInstallResult result) {
+void SettingsDialog::apply_update_install(const UpdateInstallResult& result) {
     update_busy_ = false;
     if (result.success) {
         update_button_action_ = UpdateButtonAction::None;
