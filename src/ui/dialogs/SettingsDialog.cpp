@@ -10,6 +10,9 @@
 
 #include <adwaita.h>
 
+#include <giomm/appinfo.h>
+#include <glibmm/error.h>
+
 #include <spdlog/spdlog.h>
 
 #include <array>
@@ -185,12 +188,18 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     GtkWidget* releases_button = gtk_button_new_with_label("Open Releases");
     gtk_widget_set_valign(releases_button, GTK_ALIGN_CENTER);
     gtk_widget_add_css_class(releases_button, "flat");
-    g_signal_connect(
-        releases_button, "clicked", G_CALLBACK(+[](GtkButton*, gpointer parent_widget) {
-            gtk_show_uri(GTK_WINDOW(parent_widget),
-                         "https://github.com/akashmahedy/VoidClip/releases", GDK_CURRENT_TIME);
-        }),
-        parent);
+    g_signal_connect(releases_button, "clicked", G_CALLBACK(+[](GtkButton*, gpointer self) {
+                         try {
+                             Gio::AppInfo::launch_default_for_uri(
+                                 "https://github.com/akashmahedy/VoidClip/releases");
+                         } catch (const Glib::Error& error) {
+                             spdlog::warn("could not open the releases page: {}", error.what());
+                             static_cast<SettingsDialog*>(self)->show_error(
+                                 "Could not open the releases page",
+                                 "Open github.com/akashmahedy/VoidClip/releases in your browser.");
+                         }
+                     }),
+                     this);
     adw_action_row_add_suffix(releases_row, releases_button);
     adw_preferences_group_add(system_group, GTK_WIDGET(releases_row));
 
@@ -215,7 +224,8 @@ void SettingsDialog::on_shortcut_toggled(GObject* row, GParamSpec* /*spec*/, gpo
     if (dialog->suppress_shortcut_) {
         return;
     }
-    dialog->apply_shortcut_enabled(adw_switch_row_get_active(ADW_SWITCH_ROW(row)) != FALSE);
+    static_cast<void>(
+        dialog->apply_shortcut_enabled(adw_switch_row_get_active(ADW_SWITCH_ROW(row)) != FALSE));
     // Registration can fail (e.g. off GNOME); make the switch reflect what actually
     // happened rather than the user's intent, so it can't show "on" while unbound.
     const core::Settings& current = dialog->settings_.get().settings();
