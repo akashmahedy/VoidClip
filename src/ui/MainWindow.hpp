@@ -20,11 +20,11 @@
 
 #include <adwaita.h>
 
+#include <gtkmm/button.h>
 #include <gtkmm/label.h>
 #include <gtkmm/listbox.h>
 #include <gtkmm/searchentry.h>
 #include <gtkmm/stack.h>
-#include <gtkmm/button.h>
 
 #include <cstddef>
 #include <functional>
