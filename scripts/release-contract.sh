@@ -6,6 +6,7 @@ grep -Fq 'REPO="akashmahedy/VoidClip"' scripts/install.sh
 grep -Fq 'APP="voidclip"' scripts/install.sh
 grep -Fq 'APP_ID="io.github.akashmahedy.VoidClip"' scripts/install.sh
 grep -Fq 'sha256sum *.deb *.rpm *.tar.gz *.AppImage' .github/workflows/release.yml
+grep -Fq 'CPACK_DEBIAN_PACKAGE_DEPENDS "xdotool, curl, pkexec"' packaging/CMakeLists.txt
 grep -Fq 'packaging/io.github.akashmahedy.VoidClip.desktop' \
   .github/workflows/release.yml
 grep -Fq 'scripts/gtk-smoke-session.sh' scripts/gtk-smoke.sh

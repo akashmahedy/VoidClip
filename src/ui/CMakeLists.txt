@@ -1,6 +1,7 @@
 # voidclip_ui: the GTK4 + libadwaita UI layer. Links only the pure engine — never
 # Qt — so the GTK frontend stays toolkit-isolated.
 find_package(PkgConfig REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-4.0)
 pkg_check_modules(ADWAITA REQUIRED IMPORTED_TARGET libadwaita-1)
@@ -32,6 +33,7 @@ add_library(
   XfceShortcut.cpp
   StatusNotifierItem.cpp
   KeystrokePaster.cpp
+  UpdateService.cpp
   CopyAction.cpp
   widgets/ClipCard.cpp
   widgets/ShortcutChooser.cpp
@@ -43,7 +45,8 @@ target_include_directories(voidclip_ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_link_libraries(voidclip_ui PUBLIC voidclip::core PkgConfig::GTKMM PkgConfig::ADWAITA)
 target_link_libraries(voidclip_ui PRIVATE voidclip::ui_text spdlog::spdlog voidclip::warnings
-                                          voidclip::sanitizers voidclip::config)
+                                          voidclip::sanitizers voidclip::config
+                                          nlohmann_json::nlohmann_json)
 
 # The windowed application.
 add_executable(voidclip-gtk main.cpp)

@@ -14,7 +14,7 @@ inline constexpr std::string_view kAppId = "voidclip";
 inline constexpr std::string_view kLegacyAppId = "copyclip";
 
 // Version when running from a source tree without installed package metadata.
-inline constexpr std::string_view kAppVersion = "0.3.2";
+inline constexpr std::string_view kAppVersion = "0.3.3";
 
 inline constexpr int kDefaultMaxHistoryItems = 70;
 

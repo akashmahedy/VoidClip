@@ -7,17 +7,20 @@
 #include "ui/Constants.hpp"
 #include "ui/DesktopShortcut.hpp"
 #include "ui/GnomeShortcut.hpp"
+#include "ui/UpdateService.hpp"
 
 #include <adwaita.h>
 
 #include <giomm/appinfo.h>
 #include <glibmm/error.h>
+#include <glibmm/main.h>
 
 #include <spdlog/spdlog.h>
 
 #include <array>
 #include <memory>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -75,7 +78,8 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
                                ClosedCallback on_closed)
     : settings_{settings}, history_{history}, on_theme_changed_{std::move(on_theme_changed)},
       on_panel_icon_changed_{std::move(on_panel_icon_changed)}, on_closed_{std::move(on_closed)},
-      dialog_{adw_dialog_new()} {
+      dialog_{adw_dialog_new()}, update_row_{ADW_ACTION_ROW(adw_action_row_new())},
+      update_button_{GTK_BUTTON(gtk_button_new_with_label("Checking…"))} {
     const core::Settings& current = settings.settings();
 
     // A plain AdwDialog (not AdwPreferencesDialog) so it presents as a bottom sheet
@@ -181,27 +185,16 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     g_signal_connect(startup_row, "notify::active", G_CALLBACK(&SettingsDialog::on_startup_toggled),
                      this);
 
-    auto* releases_row = ADW_ACTION_ROW(adw_action_row_new());
-    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(releases_row), "Check for updates");
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(update_row_), "Checking for updates…");
     const std::string version = "Installed version " + std::string{config::kAppVersion};
-    adw_action_row_set_subtitle(releases_row, version.c_str());
-    GtkWidget* releases_button = gtk_button_new_with_label("Open Releases");
-    gtk_widget_set_valign(releases_button, GTK_ALIGN_CENTER);
-    gtk_widget_add_css_class(releases_button, "flat");
-    g_signal_connect(releases_button, "clicked", G_CALLBACK(+[](GtkButton*, gpointer self) {
-                         try {
-                             Gio::AppInfo::launch_default_for_uri(
-                                 "https://github.com/akashmahedy/VoidClip/releases");
-                         } catch (const Glib::Error& error) {
-                             spdlog::warn("could not open the releases page: {}", error.what());
-                             static_cast<SettingsDialog*>(self)->show_error(
-                                 "Could not open the releases page",
-                                 "Open github.com/akashmahedy/VoidClip/releases in your browser.");
-                         }
-                     }),
+    adw_action_row_set_subtitle(update_row_, version.c_str());
+    gtk_widget_set_valign(GTK_WIDGET(update_button_), GTK_ALIGN_CENTER);
+    gtk_widget_add_css_class(GTK_WIDGET(update_button_), "flat");
+    gtk_widget_set_sensitive(GTK_WIDGET(update_button_), FALSE);
+    g_signal_connect(update_button_, "clicked", G_CALLBACK(&SettingsDialog::on_update_clicked),
                      this);
-    adw_action_row_add_suffix(releases_row, releases_button);
-    adw_preferences_group_add(system_group, GTK_WIDGET(releases_row));
+    adw_action_row_add_suffix(update_row_, GTK_WIDGET(update_button_));
+    adw_preferences_group_add(system_group, GTK_WIDGET(update_row_));
 
     GtkWidget* toolbar = adw_toolbar_view_new();
     adw_toolbar_view_add_top_bar(ADW_TOOLBAR_VIEW(toolbar), adw_header_bar_new());
@@ -209,6 +202,11 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     adw_dialog_set_child(dialog_, toolbar);
     g_signal_connect(dialog_, "closed", G_CALLBACK(&SettingsDialog::on_dialog_closed), this);
     adw_dialog_present(dialog_, parent);
+    check_for_updates();
+}
+
+SettingsDialog::~SettingsDialog() {
+    async_state_->alive.store(false);
 }
 
 void SettingsDialog::on_dialog_closed(AdwDialog* /*dialog*/, gpointer self) {
@@ -364,6 +362,135 @@ bool SettingsDialog::apply_startup(bool active) {
     updated.start_at_login = active;
     settings_.get().update(updated);
     return true;
+}
+
+void SettingsDialog::on_update_clicked(GtkButton* /*button*/, gpointer self) {
+    auto* dialog = static_cast<SettingsDialog*>(self);
+    if (dialog->update_busy_) {
+        return;
+    }
+    switch (dialog->update_button_action_) {
+    case UpdateButtonAction::Check:
+        dialog->check_for_updates();
+        break;
+    case UpdateButtonAction::Install:
+        dialog->install_update();
+        break;
+    case UpdateButtonAction::OpenRelease:
+        dialog->open_release_page();
+        break;
+    case UpdateButtonAction::None:
+        break;
+    }
+}
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters): labels map directly to three widgets.
+void SettingsDialog::set_update_row(const std::string& title, const std::string& subtitle,
+                                    const std::string& button_label, bool button_sensitive) {
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(update_row_), title.c_str());
+    adw_action_row_set_subtitle(update_row_, subtitle.c_str());
+    gtk_button_set_label(update_button_, button_label.c_str());
+    gtk_widget_set_sensitive(GTK_WIDGET(update_button_), static_cast<gboolean>(button_sensitive));
+}
+
+void SettingsDialog::check_for_updates() {
+    update_busy_ = true;
+    update_button_action_ = UpdateButtonAction::None;
+    set_update_row("Checking for updates…", "Installed version " + std::string{config::kAppVersion},
+                   "Checking…", false);
+
+    const std::shared_ptr<AsyncState> state = async_state_;
+    std::thread([state, self = this] {
+        UpdateCheckResult result = check_for_update(config::kAppVersion);
+        Glib::signal_idle().connect_once([state, self, result = std::move(result)]() mutable {
+            if (state->alive.load()) {
+                self->apply_update_check(std::move(result));
+            }
+        });
+    }).detach();
+}
+
+void SettingsDialog::apply_update_check(UpdateCheckResult result) {
+    update_busy_ = false;
+    switch (result.state) {
+    case UpdateCheckState::UpToDate:
+        update_button_action_ = UpdateButtonAction::Check;
+        set_update_row("VoidClip is up to date",
+                       "Installed version " + std::string{config::kAppVersion}, "Check again",
+                       true);
+        break;
+    case UpdateCheckState::Available:
+        available_update_ = std::move(result.release);
+        if (result.automatic_install_supported) {
+            update_button_action_ = UpdateButtonAction::Install;
+            set_update_row("Update available",
+                           "Version " + available_update_.version +
+                               " is ready · one system password prompt",
+                           "Update now", true);
+        } else {
+            update_button_action_ = UpdateButtonAction::OpenRelease;
+            set_update_row("Update available",
+                           "Version " + available_update_.version +
+                               " is ready · automatic install needs the DEB package",
+                           "Open Release", true);
+        }
+        break;
+    case UpdateCheckState::Error:
+        update_button_action_ = UpdateButtonAction::Check;
+        set_update_row("Could not check for updates", result.message, "Try again", true);
+        break;
+    }
+}
+
+void SettingsDialog::install_update() {
+    update_busy_ = true;
+    update_button_action_ = UpdateButtonAction::None;
+    set_update_row("Installing update…",
+                   "Approve the system prompt to install version " + available_update_.version,
+                   "Installing…", false);
+
+    const UpdateRelease release = available_update_;
+    const std::shared_ptr<AsyncState> state = async_state_;
+    std::thread([state, self = this, release] {
+        UpdateInstallResult result = install_deb_update(release);
+        Glib::signal_idle().connect_once([state, self, result = std::move(result)] {
+            if (state->alive.load()) {
+                self->apply_update_install(result);
+            }
+        });
+    }).detach();
+}
+
+void SettingsDialog::apply_update_install(const UpdateInstallResult& result) {
+    update_busy_ = false;
+    if (result.success) {
+        update_button_action_ = UpdateButtonAction::None;
+        set_update_row("Update installed", result.message, "Restart required", false);
+        auto* alert =
+            ADW_ALERT_DIALOG(adw_alert_dialog_new("Update installed", result.message.c_str()));
+        adw_alert_dialog_add_response(alert, "ok", "OK");
+        adw_alert_dialog_set_default_response(alert, "ok");
+        adw_alert_dialog_set_close_response(alert, "ok");
+        adw_dialog_present(ADW_DIALOG(alert), GTK_WIDGET(dialog_));
+        return;
+    }
+    update_button_action_ = UpdateButtonAction::Install;
+    set_update_row("Update was not installed", result.message, "Try again", true);
+    show_error("Update was not installed", result.message);
+}
+
+void SettingsDialog::open_release_page() {
+    const std::string url =
+        available_update_.tag.empty()
+            ? "https://github.com/akashmahedy/VoidClip/releases"
+            : "https://github.com/akashmahedy/VoidClip/releases/tag/" + available_update_.tag;
+    try {
+        Gio::AppInfo::launch_default_for_uri(url);
+    } catch (const Glib::Error& error) {
+        spdlog::warn("could not open the releases page: {}", error.what());
+        show_error("Could not open the releases page",
+                   "Open github.com/akashmahedy/VoidClip/releases in your browser.");
+    }
 }
 
 void SettingsDialog::show_error(const std::string& heading, const std::string& body) {
