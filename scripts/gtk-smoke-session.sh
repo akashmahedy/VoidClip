@@ -6,13 +6,32 @@ test_root="${2:?missing test root}"
 log="${test_root}/voidclip.log"
 database="${test_root}/data/voidclip/history.db"
 
-"${app}" >"${log}" 2>&1 &
-app_pid=$!
+app_pid=""
+wm_pid=""
 cleanup() {
-  kill "${app_pid}" 2>/dev/null || true
-  wait "${app_pid}" 2>/dev/null || true
+  [ -z "${app_pid}" ] || kill "${app_pid}" 2>/dev/null || true
+  [ -z "${app_pid}" ] || wait "${app_pid}" 2>/dev/null || true
+  [ -z "${wm_pid}" ] || kill "${wm_pid}" 2>/dev/null || true
+  [ -z "${wm_pid}" ] || wait "${wm_pid}" 2>/dev/null || true
 }
 trap cleanup EXIT
+
+# Xfce supplies a window manager on the real target desktop. Run a lightweight
+# one under Xvfb too, so visibility and keyboard focus are tested realistically.
+openbox --sm-disable >"${test_root}/openbox.log" 2>&1 &
+wm_pid=$!
+for _ in $(seq 1 30); do
+  xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id' && break
+  sleep 0.1
+done
+xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q 'window id' || {
+  echo "FAIL: test window manager did not start"
+  cat "${test_root}/openbox.log"
+  exit 1
+}
+
+"${app}" >"${log}" 2>&1 &
+app_pid=$!
 
 window=""
 for _ in $(seq 1 50); do
