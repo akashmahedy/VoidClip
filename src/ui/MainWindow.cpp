@@ -480,7 +480,8 @@ void MainWindow::confirm_clear_history() {
     auto* dialog = ADW_ALERT_DIALOG(
         adw_alert_dialog_new("Clear unpinned history?",
                              "This removes every unpinned clipboard item. Pinned items stay."));
-    adw_alert_dialog_add_responses(dialog, "cancel", "Cancel", "clear", "Clear", nullptr);
+    adw_alert_dialog_add_response(dialog, "cancel", "Cancel");
+    adw_alert_dialog_add_response(dialog, "clear", "Clear");
     adw_alert_dialog_set_default_response(dialog, "cancel");
     adw_alert_dialog_set_close_response(dialog, "cancel");
     adw_alert_dialog_set_response_appearance(dialog, "clear", ADW_RESPONSE_DESTRUCTIVE);

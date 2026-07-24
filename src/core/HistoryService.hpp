@@ -33,8 +33,8 @@ class HistoryService {
 public:
     // Bound individual clipboard payloads before they reach SQLite or image
     // decoding. The item-count cap alone cannot protect against one huge clip.
-    static constexpr std::size_t kMaxTextPayloadBytes = 4U * 1024U * 1024U;
-    static constexpr std::size_t kMaxImagePayloadBytes = 25U * 1024U * 1024U;
+    static constexpr std::size_t kMaxTextPayloadBytes = std::size_t{4} * 1024U * 1024U;
+    static constexpr std::size_t kMaxImagePayloadBytes = std::size_t{25} * 1024U * 1024U;
 
     HistoryService(HistoryRepository& repository, Clock& clock, int max_items);
 
