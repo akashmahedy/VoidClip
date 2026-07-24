@@ -40,9 +40,8 @@ bool CopyAction::run(const core::ClipContent& content, CopyMode mode) {
     // permanently discard formatting the user may want next time.
     history_.get().add(content);
     const core::Settings& settings = settings_.get().settings();
-    const bool should_paste =
-        mode == CopyMode::Paste || mode == CopyMode::PastePlainText ||
-        (mode == CopyMode::FollowSettings && settings.auto_paste);
+    const bool should_paste = mode == CopyMode::Paste || mode == CopyMode::PastePlainText ||
+                              (mode == CopyMode::FollowSettings && settings.auto_paste);
     if (should_paste) {
         // Cancel any still-pending paste, then schedule one for after focus returns.
         // A connection (not connect_once) so a pending paste can be disconnected on

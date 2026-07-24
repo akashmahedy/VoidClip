@@ -58,8 +58,7 @@ constexpr const char* kTableMetadata = "metadata";
 // the SQLite sidecar files that must move with the main database file.
 constexpr std::string_view kArchiveMarker = ".incompatible.";
 constexpr std::array<const char*, 3> kSqliteSidecarSuffixes{"-wal", "-shm", "-journal"};
-constexpr std::filesystem::perms kPrivateDirectoryPermissions =
-    std::filesystem::perms::owner_all;
+constexpr std::filesystem::perms kPrivateDirectoryPermissions = std::filesystem::perms::owner_all;
 constexpr std::filesystem::perms kPrivateFilePermissions =
     std::filesystem::perms::owner_read | std::filesystem::perms::owner_write;
 

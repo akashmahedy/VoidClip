@@ -225,8 +225,7 @@ TEST(HistoryServiceTest, ReducingCapacityEvictsImmediately) {
 
     harness.service.set_max_items(2);
 
-    EXPECT_EQ(content_set(harness.service.entries()),
-              (std::set<std::string>{"middle", "new"}));
+    EXPECT_EQ(content_set(harness.service.entries()), (std::set<std::string>{"middle", "new"}));
 }
 
 TEST(HistoryServiceTest, CapacityIsClampedToAtLeastOne) {

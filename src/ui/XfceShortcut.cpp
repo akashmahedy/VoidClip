@@ -78,8 +78,7 @@ bool register_xfce_shortcut(const std::string& command, const std::string& accel
         return false;
     }
 
-    return run_xfconf(
-        {"-c", kChannel, "-p", property, "-n", "-t", "string", "-s", command});
+    return run_xfconf({"-c", kChannel, "-p", property, "-n", "-t", "string", "-s", command});
 }
 
 bool unregister_xfce_shortcut(const std::string& command, const std::string& accelerator) {

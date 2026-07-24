@@ -14,10 +14,8 @@ namespace copyclip::ui {
 namespace {
 
 [[nodiscard]] bool is_xfce_session() {
-    for (const char* variable :
-         {"XDG_CURRENT_DESKTOP", "XDG_SESSION_DESKTOP", "DESKTOP_SESSION"}) {
-        if (const char* value = std::getenv(variable);
-            value != nullptr && desktop_is_xfce(value)) {
+    for (const char* variable : {"XDG_CURRENT_DESKTOP", "XDG_SESSION_DESKTOP", "DESKTOP_SESSION"}) {
+        if (const char* value = std::getenv(variable); value != nullptr && desktop_is_xfce(value)) {
             return true;
         }
     }
@@ -52,8 +50,7 @@ bool rebind_desktop_shortcut(const std::string& command, const std::string& old_
     if (!register_xfce_shortcut(command, new_accelerator)) {
         return false;
     }
-    if (old_accelerator != new_accelerator &&
-        !unregister_xfce_shortcut(command, old_accelerator)) {
+    if (old_accelerator != new_accelerator && !unregister_xfce_shortcut(command, old_accelerator)) {
         // Keep the stored setting and XFCE state aligned when removing the old
         // binding fails. Best-effort rollback avoids leaving two live shortcuts.
         static_cast<void>(unregister_xfce_shortcut(command, new_accelerator));
@@ -62,8 +59,7 @@ bool rebind_desktop_shortcut(const std::string& command, const std::string& old_
     return true;
 }
 
-bool is_desktop_shortcut_registered(const std::string& command,
-                                    const std::string& accelerator) {
+bool is_desktop_shortcut_registered(const std::string& command, const std::string& accelerator) {
     return is_xfce_session() ? is_xfce_shortcut_registered(command, accelerator)
                              : is_gnome_shortcut_registered();
 }

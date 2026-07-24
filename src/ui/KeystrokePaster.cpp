@@ -151,8 +151,7 @@ private:
         // ydotool 1.x accepts Linux input keycodes only (not key names such as
         // "ctrl+v"). 29 is KEY_LEFTCTRL and 47 is KEY_V.
         return {{"wtype", "-M", "ctrl", "v", "-m", "ctrl"},
-                {"ydotool", "key", kYdotoolCtrlDown, kYdotoolVDown, kYdotoolVUp,
-                 kYdotoolCtrlUp}};
+                {"ydotool", "key", kYdotoolCtrlDown, kYdotoolVDown, kYdotoolVUp, kYdotoolCtrlUp}};
     }
     return {{"xdotool", "key", "--clearmodifiers", "ctrl+v"}};
 }

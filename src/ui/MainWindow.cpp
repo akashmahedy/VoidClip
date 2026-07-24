@@ -169,8 +169,7 @@ void MainWindow::build_ui(GtkApplication* application) {
     adw_header_bar_pack_end(header, GTK_WIDGET(clear_button->gobj()));
 
     capture_button_ = Gtk::make_managed<Gtk::Button>();
-    capture_button_->signal_clicked().connect(
-        sigc::mem_fun(*this, &MainWindow::toggle_capture));
+    capture_button_->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::toggle_capture));
     adw_header_bar_pack_end(header, GTK_WIDGET(capture_button_->gobj()));
 
     auto* settings_button = Gtk::make_managed<Gtk::Button>();
@@ -190,10 +189,9 @@ void MainWindow::build_ui(GtkApplication* application) {
         search_text_ = search_->get_text().raw();
         apply_filter();
     });
-    const Glib::RefPtr<Gtk::EventControllerKey> key_controller =
-        Gtk::EventControllerKey::create();
-    key_controller->signal_key_pressed().connect(
-        sigc::mem_fun(*this, &MainWindow::on_key_pressed), false);
+    const Glib::RefPtr<Gtk::EventControllerKey> key_controller = Gtk::EventControllerKey::create();
+    key_controller->signal_key_pressed().connect(sigc::mem_fun(*this, &MainWindow::on_key_pressed),
+                                                 false);
     search_->add_controller(key_controller);
     content->append(*search_);
 
@@ -369,8 +367,7 @@ void MainWindow::select_relative(int direction) {
     const auto found = std::find(visible.begin(), visible.end(), current);
     std::ptrdiff_t index = found == visible.end() ? 0 : std::distance(visible.begin(), found);
     index += static_cast<std::ptrdiff_t>(direction);
-    index = std::clamp(index, std::ptrdiff_t{0},
-                       static_cast<std::ptrdiff_t>(visible.size() - 1));
+    index = std::clamp(index, std::ptrdiff_t{0}, static_cast<std::ptrdiff_t>(visible.size() - 1));
     list_->select_row(*visible.at(static_cast<std::size_t>(index)));
 }
 
@@ -383,12 +380,10 @@ void MainWindow::select_index(std::size_t index) {
 
 bool MainWindow::on_key_pressed(unsigned int keyval, unsigned int /*keycode*/,
                                 Gdk::ModifierType state) {
-    const bool control = (state & Gdk::ModifierType::CONTROL_MASK) ==
-                         Gdk::ModifierType::CONTROL_MASK;
-    const bool alt =
-        (state & Gdk::ModifierType::ALT_MASK) == Gdk::ModifierType::ALT_MASK;
-    const bool shift =
-        (state & Gdk::ModifierType::SHIFT_MASK) == Gdk::ModifierType::SHIFT_MASK;
+    const bool control =
+        (state & Gdk::ModifierType::CONTROL_MASK) == Gdk::ModifierType::CONTROL_MASK;
+    const bool alt = (state & Gdk::ModifierType::ALT_MASK) == Gdk::ModifierType::ALT_MASK;
+    const bool shift = (state & Gdk::ModifierType::SHIFT_MASK) == Gdk::ModifierType::SHIFT_MASK;
 
     if (keyval == GDK_KEY_Escape) {
         gtk_widget_set_visible(GTK_WIDGET(window_), FALSE);
@@ -422,8 +417,7 @@ bool MainWindow::on_key_pressed(unsigned int keyval, unsigned int /*keycode*/,
     if (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) {
         if (ClipCard* card = selected_card(); card != nullptr) {
             const CopyMode mode =
-                alt ? (shift ? CopyMode::PastePlainText : CopyMode::Paste)
-                    : CopyMode::CopyOnly;
+                alt ? (shift ? CopyMode::PastePlainText : CopyMode::Paste) : CopyMode::CopyOnly;
             copy(card->entry(), mode);
         }
         return true;

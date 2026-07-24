@@ -35,8 +35,7 @@ constexpr const char* kKeyShowPanelIcon = "show_panel_icon";
 // Indentation width for the serialized JSON, mirroring the reference's
 // json.dumps(..., indent=2).
 constexpr int kJsonIndent = 2;
-constexpr std::filesystem::perms kPrivateDirectoryPermissions =
-    std::filesystem::perms::owner_all;
+constexpr std::filesystem::perms kPrivateDirectoryPermissions = std::filesystem::perms::owner_all;
 constexpr std::filesystem::perms kPrivateFilePermissions =
     std::filesystem::perms::owner_read | std::filesystem::perms::owner_write;
 

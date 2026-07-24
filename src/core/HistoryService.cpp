@@ -120,10 +120,10 @@ bool HistoryService::add(const ClipContent& content) {
         // Collapse a rapid duplicate — a re-copy of the current item, or a backend
         // that signals one clipboard change twice — into a no-op while that content
         // is still the last recorded and still present (no churn, no notification).
-        const bool same_representation =
-            existing.has_value() && existing->kind == entry.kind && existing->html == entry.html &&
-            existing->image_width == entry.image_width &&
-            existing->image_height == entry.image_height;
+        const bool same_representation = existing.has_value() && existing->kind == entry.kind &&
+                                         existing->html == entry.html &&
+                                         existing->image_width == entry.image_width &&
+                                         existing->image_height == entry.image_height;
         if (entry.content == last_added_ && same_representation) {
             return false;
         }

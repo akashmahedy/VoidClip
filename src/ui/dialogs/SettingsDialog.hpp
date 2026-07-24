@@ -26,8 +26,7 @@ public:
     using ClosedCallback = std::function<void()>;
 
     SettingsDialog(GtkWidget* parent, core::SettingsService& settings,
-                   core::HistoryService& history,
-                   ThemeChangedCallback on_theme_changed,
+                   core::HistoryService& history, ThemeChangedCallback on_theme_changed,
                    PanelIconChangedCallback on_panel_icon_changed, ClosedCallback on_closed);
     ~SettingsDialog() = default;
 

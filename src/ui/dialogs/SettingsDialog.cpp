@@ -65,8 +65,7 @@ void fill_combo(AdwComboRow* row, const std::vector<std::string>& options, unsig
 } // namespace
 
 SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& settings,
-                               core::HistoryService& history,
-                               ThemeChangedCallback on_theme_changed,
+                               core::HistoryService& history, ThemeChangedCallback on_theme_changed,
                                PanelIconChangedCallback on_panel_icon_changed,
                                ClosedCallback on_closed)
     : settings_{settings}, history_{history}, on_theme_changed_{std::move(on_theme_changed)},
@@ -93,9 +92,9 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
     adw_preferences_row_set_title(ADW_PREFERENCES_ROW(shortcut_enabled_row), "Global shortcut");
     gtk_widget_set_tooltip_text(GTK_WIDGET(shortcut_enabled_row),
                                 "Open CopyClip from anywhere with a keyboard shortcut");
-    adw_switch_row_set_active(shortcut_enabled_row,
-                              static_cast<gboolean>(is_desktop_shortcut_registered(
-                                  executable_path(), current.hotkey)));
+    adw_switch_row_set_active(
+        shortcut_enabled_row,
+        static_cast<gboolean>(is_desktop_shortcut_registered(executable_path(), current.hotkey)));
     adw_preferences_group_add(shortcut_group, GTK_WIDGET(shortcut_enabled_row));
     g_signal_connect(shortcut_enabled_row, "notify::active",
                      G_CALLBACK(&SettingsDialog::on_shortcut_toggled), this);
@@ -127,11 +126,9 @@ SettingsDialog::SettingsDialog(GtkWidget* parent, core::SettingsService& setting
 
     auto* capture_paused_row = ADW_SWITCH_ROW(adw_switch_row_new());
     adw_preferences_row_set_title(ADW_PREFERENCES_ROW(capture_paused_row), "Pause recording");
-    gtk_widget_set_tooltip_text(
-        GTK_WIDGET(capture_paused_row),
-        "Keep CopyClip running without saving new clipboard contents");
-    adw_switch_row_set_active(capture_paused_row,
-                              static_cast<gboolean>(current.capture_paused));
+    gtk_widget_set_tooltip_text(GTK_WIDGET(capture_paused_row),
+                                "Keep CopyClip running without saving new clipboard contents");
+    adw_switch_row_set_active(capture_paused_row, static_cast<gboolean>(current.capture_paused));
     adw_preferences_group_add(behaviour_group, GTK_WIDGET(capture_paused_row));
     g_signal_connect(capture_paused_row, "notify::active",
                      G_CALLBACK(&SettingsDialog::on_capture_paused_toggled), this);
